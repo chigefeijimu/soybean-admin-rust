@@ -18,19 +18,19 @@ impl Web3Router {
                 &format!("{}/wallet/verify", base_path),
                 Method::POST,
                 "Web3Api",
-                "验证钱包所有权",
+                "Verify wallet ownership",
             ),
             RouteInfo::new(
                 &format!("{}/wallet/list", base_path),
                 Method::GET,
                 "Web3Api",
-                "获取钱包列表",
+                "List wallets",
             ),
             RouteInfo::new(
                 &format!("{}/wallet/:id", base_path),
                 Method::DELETE,
                 "Web3Api",
-                "删除钱包",
+                "Delete wallet",
             ),
         ];
 
@@ -40,37 +40,37 @@ impl Web3Router {
                 &format!("{}/contract", base_path),
                 Method::POST,
                 "Web3ContractApi",
-                "创建合约",
+                "Create contract",
             ),
             RouteInfo::new(
                 &format!("{}/contract/list", base_path),
                 Method::GET,
                 "Web3ContractApi",
-                "获取合约列表",
+                "List contracts",
             ),
             RouteInfo::new(
                 &format!("{}/contract/:id", base_path),
                 Method::GET,
                 "Web3ContractApi",
-                "获取合约详情",
+                "Get contract",
             ),
             RouteInfo::new(
                 &format!("{}/contract/:id", base_path),
                 Method::PUT,
                 "Web3ContractApi",
-                "更新合约",
+                "Update contract",
             ),
             RouteInfo::new(
                 &format!("{}/contract/:id", base_path),
                 Method::DELETE,
                 "Web3ContractApi",
-                "删除合约",
+                "Delete contract",
             ),
             RouteInfo::new(
                 &format!("{}/contract/:id/call", base_path),
                 Method::POST,
                 "Web3ContractApi",
-                "调用合约方法",
+                "Call contract method",
             ),
         ];
 
@@ -80,7 +80,7 @@ impl Web3Router {
                 &format!("{}/transaction/list", base_path),
                 Method::GET,
                 "Web3TransactionApi",
-                "获取交易记录",
+                "List transactions",
             ),
         ];
 
@@ -96,14 +96,14 @@ impl Web3Router {
             // Wallet routes
             .route("/wallet/verify", post(Web3Api::verify_wallet))
             .route("/wallet/list", get(Web3Api::list_wallets))
-            .route("/wallet/:id", delete(Web3Api::delete_wallet))
+            .route("/wallet/{id}", delete(Web3Api::delete_wallet))
             // Contract routes
             .route("/contract", post(Web3ContractApi::create_contract))
             .route("/contract/list", get(Web3ContractApi::list_contracts))
-            .route("/contract/:id", get(Web3ContractApi::get_contract))
-            .route("/contract/:id", put(Web3ContractApi::update_contract))
-            .route("/contract/:id", delete(Web3ContractApi::delete_contract))
-            .route("/contract/:id/call", post(Web3ContractApi::call_contract))
+            .route("/contract/{id}", get(Web3ContractApi::get_contract))
+            .route("/contract/{id}", put(Web3ContractApi::update_contract))
+            .route("/contract/{id}", delete(Web3ContractApi::delete_contract))
+            .route("/contract/{id}/call", post(Web3ContractApi::call_contract))
             // Transaction routes
             .route("/transaction/list", get(Web3TransactionApi::list_transactions));
 

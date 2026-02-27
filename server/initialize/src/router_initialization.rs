@@ -25,7 +25,7 @@ use server_service::{
         SysEndpointService, SysLoginLogService, SysMenuService, SysOperationLogService,
         SysOrganizationService, SysRoleService, SysUserService, TEndpointService,
     },
-    web3::{Web3ContractService, Web3TransactionService, Web3WalletService},
+    web3::Web3WalletService,
     SysEndpoint,
 };
 use tower_http::trace::TraceLayer;
@@ -315,24 +315,11 @@ pub async fn initialize_admin_router() -> Router {
         Some(complex_validation)
     );
 
-    // Web3 routes (no auth required for wallet verification)
+    // Web3 routes - use Web3WalletService as main service
+    // Other services can be accessed through this service
     merge_router!(
         Web3Router::init_web3_router().await,
         Web3WalletService,
-        false,
-        false,
-        None
-    );
-    merge_router!(
-        Web3Router::init_web3_router().await,
-        Web3ContractService,
-        false,
-        false,
-        None
-    );
-    merge_router!(
-        Web3Router::init_web3_router().await,
-        Web3TransactionService,
         false,
         false,
         None
