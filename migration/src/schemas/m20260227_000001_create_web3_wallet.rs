@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -22,7 +24,7 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Web3Wallet::UserId)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("关联用户ID"),
                     )
                     .col(
@@ -48,13 +50,13 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Web3Wallet::Signature)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("签名"),
                     )
                     .col(
                         ColumnDef::new(Web3Wallet::Message)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("签名消息"),
                     )
                     .col(

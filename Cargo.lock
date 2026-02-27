@@ -5007,6 +5007,7 @@ dependencies = [
  "axum-casbin",
  "axum-extra",
  "headers",
+ "serde_json",
  "server-core",
  "server-service",
  "xdb",
@@ -5191,6 +5192,7 @@ dependencies = [
 name = "server-service"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "axum-casbin",
  "chrono",

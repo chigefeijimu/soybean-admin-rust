@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -22,13 +24,13 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Web3Transaction::UserId)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("用户ID"),
                     )
                     .col(
                         ColumnDef::new(Web3Transaction::ContractId)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("合约ID"),
                     )
                     .col(
@@ -40,13 +42,13 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Web3Transaction::Params)
                             .json()
-                            .nullable()
+                            .null()
                             .comment("参数"),
                     )
                     .col(
                         ColumnDef::new(Web3Transaction::TxHash)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("交易哈希"),
                     )
                     .col(
@@ -59,13 +61,13 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Web3Transaction::FromAddress)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("调用者地址"),
                     )
                     .col(
                         ColumnDef::new(Web3Transaction::ErrorMessage)
                             .text()
-                            .nullable()
+                            .null()
                             .comment("错误信息"),
                     )
                     .col(

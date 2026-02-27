@@ -21,26 +21,38 @@ impl Web3Api {
     pub async fn verify_wallet(
         Extension(service): Extension<Arc<Web3WalletService>>,
         ValidatedJson(input): ValidatedJson<WalletVerifyInput>,
-    ) -> Result<Res<server_model::web3::output::WalletInfo, AppError>> {
-        service.verify_wallet(input).await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.verify_wallet(input).await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 
     /// List wallets
     pub async fn list_wallets(
         Query(params): Query<WalletListInput>,
         Extension(service): Extension<Arc<Web3WalletService>>,
-    ) -> Result<Res<Vec<server_model::web3::output::WalletInfo>, AppError>> {
-        service.list_wallets(params).await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.list_wallets(params).await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 
     /// Delete wallet
     pub async fn delete_wallet(
         Path(id): Path<String>,
         Extension(service): Extension<Arc<Web3WalletService>>,
-    ) -> Res<bool> {
+    ) -> Res<serde_json::Value> {
         match service.delete_wallet(&id).await {
-            Ok(_) => Res::new_data(true),
-            Err(e) => Res::new_error(e),
+            Ok(_) => Res { code: 200, data: Some(serde_json::json!(true)), msg: "success".to_string(), success: true },
+            Err(e) => Res { code: 500, data: None, msg: e.message, success: false },
         }
     }
 }
@@ -54,41 +66,65 @@ impl Web3ContractApi {
     pub async fn create_contract(
         Extension(service): Extension<Arc<Web3ContractService>>,
         ValidatedJson(input): ValidatedJson<ContractCreateInput>,
-    ) -> Result<Res<server_model::web3::output::ContractInfo, AppError>> {
-        service.create_contract(input).await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.create_contract(input).await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 
     /// List contracts
     pub async fn list_contracts(
         Extension(service): Extension<Arc<Web3ContractService>>,
-    ) -> Result<Res<Vec<server_model::web3::output::ContractInfo>, AppError>> {
-        service.list_contracts().await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.list_contracts().await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 
     /// Get contract
     pub async fn get_contract(
         Path(id): Path<String>,
         Extension(service): Extension<Arc<Web3ContractService>>,
-    ) -> Result<Res<server_model::web3::output::ContractInfo, AppError>> {
-        service.get_contract(&id).await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.get_contract(&id).await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 
     /// Update contract
     pub async fn update_contract(
         Extension(service): Extension<Arc<Web3ContractService>>,
         ValidatedJson(input): ValidatedJson<ContractUpdateInput>,
-    ) -> Result<Res<server_model::web3::output::ContractInfo, AppError>> {
-        service.update_contract(input).await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.update_contract(input).await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 
     /// Delete contract
     pub async fn delete_contract(
         Path(id): Path<String>,
         Extension(service): Extension<Arc<Web3ContractService>>,
-    ) -> Res<bool> {
+    ) -> Res<serde_json::Value> {
         match service.delete_contract(&id).await {
-            Ok(_) => Res::new_data(true),
-            Err(e) => Res::new_error(e),
+            Ok(_) => Res { code: 200, data: Some(serde_json::json!(true)), msg: "success".to_string(), success: true },
+            Err(e) => Res { code: 500, data: None, msg: e.message, success: false },
         }
     }
 
@@ -97,8 +133,14 @@ impl Web3ContractApi {
         Path(id): Path<String>,
         Extension(service): Extension<Arc<Web3ContractService>>,
         ValidatedJson(input): ValidatedJson<ContractCallInput>,
-    ) -> Result<Res<server_model::web3::output::ContractCallOutput, AppError>> {
-        service.call_contract(input).await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.call_contract(input).await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 }
 
@@ -111,7 +153,13 @@ impl Web3TransactionApi {
     pub async fn list_transactions(
         Query(user_id): Query<Option<String>>,
         Extension(service): Extension<Arc<Web3TransactionService>>,
-    ) -> Result<Res<Vec<server_model::web3::output::TransactionInfo>>, AppError>> {
-        service.list_transactions(user_id).await.map(Res::new_data)
+    ) -> Result<Res<serde_json::Value>, AppError> {
+        let result = service.list_transactions(user_id).await.map_err(|e| AppError { code: 500, message: e.message })?;
+        Ok(Res {
+            code: 200,
+            data: Some(serde_json::to_value(result).unwrap_or(serde_json::Value::Null)),
+            msg: "success".to_string(),
+            success: true,
+        })
     }
 }

@@ -14,3 +14,4 @@ xdb = { path = "../../xdb" }
 axum = { workspace = true, features = ["http1", "query", "json", "multipart"] }
 axum-extra = { workspace = true, features = ["typed-header"] }
 headers = { workspace = true }
+serde_json.workspace = true

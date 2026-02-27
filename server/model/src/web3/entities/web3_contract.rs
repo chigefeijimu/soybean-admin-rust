@@ -12,7 +12,7 @@ pub struct Model {
     pub name: String,
     #[sea_orm(column_type = "Text")]
     pub contract_address: String,
-    #[sea_orm(column_type = "Int")]
+    #[sea_orm(column_type = "Integer")]
     pub chain_id: i32,
     #[sea_orm(column_type = "Json", nullable)]
     pub abi: Option<String>,

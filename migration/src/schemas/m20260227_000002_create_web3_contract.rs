@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -41,19 +43,19 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Web3Contract::Abi)
                             .json()
-                            .nullable()
+                            .null()
                             .comment("合约ABI"),
                     )
                     .col(
                         ColumnDef::new(Web3Contract::Description)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("描述"),
                     )
                     .col(
                         ColumnDef::new(Web3Contract::CreatedBy)
                             .string()
-                            .nullable()
+                            .null()
                             .comment("创建者"),
                     )
                     .col(

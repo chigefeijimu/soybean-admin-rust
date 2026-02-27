@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use serde::{Deserialize, Serialize};
 use server_core::web::page::PageRequest;
 use validator::Validate;

@@ -1,3 +1,4 @@
+pub mod prelude;
 pub mod web3_wallet;
 pub mod web3_contract;
 pub mod web3_transaction;
