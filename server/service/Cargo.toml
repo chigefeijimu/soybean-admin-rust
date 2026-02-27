@@ -19,6 +19,7 @@ sea-orm = { workspace = true }
 thiserror = { workspace = true }
 ulid = { workspace = true }
 chrono = { workspace = true }
+serde = { workspace = true }
 tracing = { workspace = true, features = ["log"] }
 redis = { workspace = true }
 mongodb = { workspace = true }

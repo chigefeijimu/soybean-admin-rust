@@ -5199,6 +5199,7 @@ dependencies = [
  "mongodb",
  "redis",
  "sea-orm",
+ "serde",
  "server-constant",
  "server-core",
  "server-global",
