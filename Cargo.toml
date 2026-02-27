@@ -152,3 +152,12 @@ convert_case = "0.8"                                            # 字符串命�
 aws-config = "1.8"
 aws-sdk-config = "1"
 aws-sdk-s3 = { version = "1", features = ["behavior-version-latest"] }
+
+# =========================================
+# Web3 相关依赖
+# =========================================
+ethers = { version = "2.0", features = ["abigen", "rustls"] }
+ethers-providers = { version = "0.4", features = ["rustls"] }
+ethers-signers = { version = "0.4", features = ["rustls"] }
+ethabi = "18"
+rlp = "0.5"

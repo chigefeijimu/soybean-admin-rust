@@ -18,12 +18,14 @@ use server_router::admin::{
     SysLoginLogRouter, SysMenuRouter, SysOperationLogRouter, SysOrganizationRouter, SysRoleRouter,
     SysSandboxRouter, SysUserRouter,
 };
+use server_router::web3::Web3Router;
 use server_service::{
     admin::{
         SysAccessKeyService, SysAuthService, SysAuthorizationService, SysDomainService,
         SysEndpointService, SysLoginLogService, SysMenuService, SysOperationLogService,
         SysOrganizationService, SysRoleService, SysUserService, TEndpointService,
     },
+    web3::{Web3ContractService, Web3TransactionService, Web3WalletService},
     SysEndpoint,
 };
 use tower_http::trace::TraceLayer;
@@ -311,6 +313,29 @@ pub async fn initialize_admin_router() -> Router {
         false,
         false,
         Some(complex_validation)
+    );
+
+    // Web3 routes (no auth required for wallet verification)
+    merge_router!(
+        Web3Router::init_web3_router().await,
+        Web3WalletService,
+        false,
+        false,
+        None
+    );
+    merge_router!(
+        Web3Router::init_web3_router().await,
+        Web3ContractService,
+        false,
+        false,
+        None
+    );
+    merge_router!(
+        Web3Router::init_web3_router().await,
+        Web3TransactionService,
+        false,
+        false,
+        None
     );
 
     app = app.fallback(handler_404);
