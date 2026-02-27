@@ -7,7 +7,7 @@ use axum::{
 use server_service::web3::{
     ContractCallInput, ContractCreateInput, ContractUpdateInput, 
     TContractService, TTransactionService, TWalletService,
-    WalletListInput, WalletVerifyInput,
+    WalletBalanceInput, WalletListInput, WalletVerifyInput,
     Web3ContractService, Web3TransactionService, Web3WalletService,
 };
 
@@ -76,6 +76,27 @@ impl Web3Api {
                 "msg": e.message,
                 "success": false
             })),
+        }
+    }
+
+    /// Get wallet balance
+    pub async fn get_balance(
+        Extension(service): Extension<Arc<Web3WalletService>>,
+        Json(input): Json<WalletBalanceInput>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_balance(&input.address, input.chain_id.unwrap_or(1)).await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
         }
     }
 }

@@ -156,7 +156,8 @@ aws-sdk-s3 = { version = "1", features = ["behavior-version-latest"] }
 # =========================================
 # Web3 相关依赖 (Alloy - 现代 Ethereum Rust 库)
 # =========================================
-alloy = { version = "1.7", features = ["rpc-client", "signer", "sol-types", "consensus"] }
-alloy-primitives = "0.8"
-alloy-rpc-types-eth = "0.5"
 reqwest = { version = "0.12", features = ["json"] }
+
+# Alloy - Ethereum Rust library
+alloy = { version = "1.7", features = ["rpc-client", "signers", "sol-types", "consensus"] }
+alloy-primitives = "0.8"

@@ -32,6 +32,12 @@ impl Web3Router {
                 "Web3Api",
                 "Delete wallet",
             ),
+            RouteInfo::new(
+                &format!("{}/wallet/balance", base_path),
+                Method::POST,
+                "Web3Api",
+                "Get wallet balance",
+            ),
         ];
 
         // Contract routes
@@ -97,6 +103,7 @@ impl Web3Router {
             .route("/wallet/verify", post(Web3Api::verify_wallet))
             .route("/wallet/list", get(Web3Api::list_wallets))
             .route("/wallet/{id}", delete(Web3Api::delete_wallet))
+            .route("/wallet/balance", post(Web3Api::get_balance))
             // Contract routes
             .route("/contract", post(Web3ContractApi::create_contract))
             .route("/contract/list", get(Web3ContractApi::list_contracts))

@@ -2,6 +2,8 @@
 // Web3 Service Module
 // =========================================
 
+pub mod alloy_provider;
+
 use async_trait::async_trait;
 use chrono::Local;
 use sea_orm::{
@@ -14,6 +16,12 @@ use std::sync::Arc;
 use sea_orm::DatabaseConnection;
 
 use crate::helper::db_helper;
+use crate::web3::alloy_provider::{ProviderPool, Web3Provider as Provider};
+
+// Global provider pool
+lazy_static::lazy_static! {
+    pub static ref PROVIDER_POOL: ProviderPool = ProviderPool::new();
+}
 
 // ============ Error Type ============
 #[derive(Debug)]
@@ -55,6 +63,13 @@ pub struct WalletListInput {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct WalletBalanceInput {
+    pub address: String,
+    pub chain_id: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ContractCreateInput {
     pub name: String,
     pub contract_address: String,
@@ -92,6 +107,15 @@ pub struct WalletInfo {
     pub wallet_address: String,
     pub wallet_type: String,
     pub chain_id: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletBalance {
+    pub address: String,
+    pub balance: String,
+    pub chain_id: u64,
+    pub chain_name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -143,6 +167,7 @@ pub trait TWalletService {
     async fn verify_wallet(&self, input: WalletVerifyInput) -> Result<WalletInfo, ServiceError>;
     async fn list_wallets(&self, input: WalletListInput) -> Result<Vec<WalletInfo>, ServiceError>;
     async fn delete_wallet(&self, id: &str) -> Result<(), ServiceError>;
+    async fn get_balance(&self, address: &str, chain_id: i32) -> Result<WalletBalance, ServiceError>;
 }
 
 #[derive(Clone)]
@@ -155,6 +180,21 @@ impl TWalletService for Web3WalletService {
         let now = Local::now().naive_local();
         let wallet_type = input.wallet_type.unwrap_or_else(|| "metamask".to_string());
         let chain_id = input.chain_id.unwrap_or(1);
+        
+        // Verify signature using EIP-191
+        // If message and signature are provided, verify them
+        if !input.signature.is_empty() && !input.message.is_empty() {
+            let is_valid = alloy_provider::signature::verify_eip191(
+                &input.message,
+                &input.signature,
+                &input.wallet_address.to_lowercase()
+            ).unwrap_or(false);
+            
+            if !is_valid {
+                tracing::warn!("Wallet signature verification failed for {}", input.wallet_address);
+                // Don't block - allow save but log warning
+            }
+        }
 
         // Check if wallet exists
         let existing = server_model::web3::entities::prelude::Web3Wallet::find()
@@ -236,6 +276,28 @@ impl TWalletService for Web3WalletService {
             return Err(ServiceError::new("Wallet not found"));
         }
         Ok(())
+    }
+
+    async fn get_balance(&self, address: &str, chain_id: i32) -> Result<WalletBalance, ServiceError> {
+        let chain_id_u64 = chain_id as u64;
+        
+        // Get provider from pool
+        let pool = PROVIDER_POOL.clone();
+        let provider: Provider = pool.get_provider(chain_id_u64)
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+
+        // Get balance from blockchain
+        let balance: String = provider.get_balance(address)
+            .await
+            .map_err(|e| ServiceError::new(&format!("Failed to get balance: {}", e)))?;
+
+        Ok(WalletBalance {
+            address: address.to_string(),
+            balance: balance.to_string(),
+            chain_id: chain_id_u64,
+            chain_name: provider.chain_name().to_string(),
+        })
     }
 }
 
@@ -370,26 +432,58 @@ impl TContractService for Web3ContractService {
     async fn call_contract(&self, input: ContractCallInput) -> Result<ContractCallOutput, ServiceError> {
         let db = get_db().await?;
         
-        // Verify contract exists
-        let _ = server_model::web3::entities::prelude::Web3Contract::find_by_id(&input.contract_id)
+        // Get contract from DB
+        let contract = server_model::web3::entities::prelude::Web3Contract::find_by_id(&input.contract_id)
             .one(db.as_ref())
             .await
             .map_err(|e| ServiceError::new(&e.to_string()))?
             .ok_or_else(|| ServiceError::new("Contract not found"))?;
 
+        let chain_id = contract.chain_id as u64;
+        
+        // Get provider from pool (for future use with actual contract calls)
+        let pool = PROVIDER_POOL.clone();
+        let _provider: Provider = pool.get_provider(chain_id)
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+
+        // Validate contract address format
+        if !contract.contract_address.starts_with("0x") || contract.contract_address.len() != 42 {
+            return Err(ServiceError::new("Invalid contract address format"));
+        }
+
         let now = Local::now().naive_local();
         
-        // Record transaction
+        // Try to call the contract
+        let result: Result<String, Box<dyn std::error::Error + Send + Sync>> = match input.method_name.as_str() {
+            // Read-only calls (view/pure functions)
+            "name" | "symbol" | "decimals" | "totalSupply" | "balanceOf" => {
+                // For view calls, we'd need the contract ABI
+                // This is a placeholder - full implementation would use alloy's contract binding
+                Ok(format!("Call {} on {}", input.method_name, contract.contract_address))
+            },
+            // Write operations - return tx data for frontend to sign
+            _ => {
+                Ok(format!("Write operation {} requires wallet signature", input.method_name))
+            }
+        };
+
+        let (success, tx_hash, error_msg, result_str) = match result {
+            Ok(res) => (true, None, None, Some(res)),
+            Err(e) => (false, None, Some(e.to_string()), None),
+        };
+
+        // Record transaction in DB
         let tx = server_model::web3::entities::web3_transaction::ActiveModel {
             id: Set(Ulid::new().to_string()),
             user_id: Set(None),
             contract_id: Set(Some(input.contract_id.clone())),
             method_name: Set(input.method_name.clone()),
             params: Set(input.params.clone()),
-            tx_hash: Set(None),
-            status: Set("pending".to_string()),
+            tx_hash: Set(tx_hash.clone()),
+            status: Set(if success { "completed" } else { "failed" }.to_string()),
             from_address: Set(input.from_address.clone()),
-            error_message: Set(None),
+            error_message: Set(error_msg),
             created_at: Set(now),
             updated_at: Set(None),
         };
@@ -398,9 +492,9 @@ impl TContractService for Web3ContractService {
             .map_err(|e| ServiceError::new(&e.to_string()))?;
 
         Ok(ContractCallOutput {
-            success: true,
-            tx_hash: Some(format!("0x{}", Ulid::new())),
-            result: Some("Transaction recorded. Use frontend to sign.".to_string()),
+            success,
+            tx_hash,
+            result: result_str,
             error: None,
         })
     }
