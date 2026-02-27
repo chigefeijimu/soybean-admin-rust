@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-use validator::Validate;
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContractCreateInput {
     pub name: String,
@@ -24,24 +23,10 @@ pub struct ContractUpdateInput {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ContractInfo {
-    pub id: String,
-    pub name: String,
-    pub contract_address: String,
-    pub chain_id: i32,
-    pub abi: Option<String>,
-    pub description: Option<String>,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ContractListOutput {
-    pub list: Vec<ContractInfo>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ContractDetailOutput {
-    pub info: ContractInfo,
+pub struct ContractCallInput {
+    pub contract_id: String,
+    pub method_name: String,
+    pub params: Option<String>,
+    pub from_address: Option<String>,
+    pub value: Option<String>,
 }

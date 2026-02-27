@@ -29,7 +29,7 @@ use server_model::admin::{
 use server_utils::{SecureUtil, TreeBuilder};
 use thiserror::Error;
 use tokio::sync::mpsc;
-use tracing::{error, instrument};
+use tracing::instrument;
 use ulid::Ulid;
 
 use super::{

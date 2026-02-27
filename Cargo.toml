@@ -160,4 +160,3 @@ alloy = { version = "1.7", features = ["rpc-client", "signer", "sol-types", "con
 alloy-primitives = "0.8"
 alloy-rpc-types-eth = "0.5"
 reqwest = { version = "0.12", features = ["json"] }
-tokio = { version = "1", features = ["full"] }
