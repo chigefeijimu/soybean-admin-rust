@@ -556,3 +556,39 @@
 ## 下一步
 - 前后端集成测试
 - 实际部署验证
+
+---
+
+## 开发迭代 (2026-03-01 05:51 - 本次)
+
+### 本次完成的功能
+1. **提交之前的更改**:
+   - 后端: receipt_parser.rs + market_data.rs + API集成 (767行新增)
+   - 前端: 市场数据API类型和方法 (168行新增)
+
+### 代码改动统计
+- 后端: 6个文件, +767行
+- 前端: 2个文件, +168行
+- 总计: 8个文件, +935行
+
+### 验证
+- `cargo check --package server-service` ✅
+- `cargo check --package server-api` ✅
+- `cargo check --package server-router` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+
+### 可能的改进点
+- 前后端集成测试
+- 私钥管理 (交易发送)
+- Gas优化 (EIP-1559)
+- Redis缓存
