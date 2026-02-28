@@ -152,7 +152,7 @@ impl TUserService for SysUserService {
 
         user.domain = Set(input.user.domain);
         user.username = Set(input.user.username);
-        user.password = Set(input.user.password); // TODO: Note: In a real application, you should hash the password
+        user.password = Set(SecureUtil::hash_password(input.user.password.as_bytes()).unwrap());
         user.nick_name = Set(input.user.nick_name);
         user.avatar = Set(input.user.avatar);
         user.email = Set(input.user.email);
