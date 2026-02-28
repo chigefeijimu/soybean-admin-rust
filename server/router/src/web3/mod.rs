@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -96,10 +96,75 @@ impl Web3Router {
             ),
         ];
 
+        // Market data routes
+        let market_data_routes = vec![
+            RouteInfo::new(
+                &format!("{}/market/price/:symbol", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get token price by symbol",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/prices", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get all token prices",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/overview", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get market overview",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/gas/:chainId", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get gas price for chain",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/defi", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get DeFi protocols",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/history/:symbol/:days", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get price history",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/search/:query", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Search tokens",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/trending", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get trending tokens",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/gainers", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get top gainers",
+            ),
+            RouteInfo::new(
+                &format!("{}/market/losers", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get top losers",
+            ),
+        ];
+
         // Add all routes
         for route in wallet_routes.into_iter()
             .chain(contract_routes.into_iter())
-            .chain(transaction_routes.into_iter()) 
+            .chain(transaction_routes.into_iter())
+            .chain(market_data_routes.into_iter()) 
         {
             add_route(route).await;
         }
@@ -119,7 +184,18 @@ impl Web3Router {
             .route("/contract/{id}/call", post(Web3ContractApi::call_contract))
             .route("/contract/token-balances", post(Web3ContractApi::get_token_balances))
             // Transaction routes
-            .route("/transaction/list", get(Web3TransactionApi::list_transactions));
+            .route("/transaction/list", get(Web3TransactionApi::list_transactions))
+            // Market data routes
+            .route("/market/price/{symbol}", get(Web3MarketDataApi::get_token_price))
+            .route("/market/prices", get(Web3MarketDataApi::get_all_prices))
+            .route("/market/overview", get(Web3MarketDataApi::get_market_overview))
+            .route("/market/gas/{chainId}", get(Web3MarketDataApi::get_gas_price))
+            .route("/market/defi", get(Web3MarketDataApi::get_defi_protocols))
+            .route("/market/history/{symbol}/{days}", get(Web3MarketDataApi::get_price_history))
+            .route("/market/search/{query}", get(Web3MarketDataApi::search_tokens))
+            .route("/market/trending", get(Web3MarketDataApi::get_trending))
+            .route("/market/gainers", get(Web3MarketDataApi::get_top_gainers))
+            .route("/market/losers", get(Web3MarketDataApi::get_top_losers));
 
         router
     }

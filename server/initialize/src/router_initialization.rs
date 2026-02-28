@@ -25,7 +25,7 @@ use server_service::{
         SysEndpointService, SysLoginLogService, SysMenuService, SysOperationLogService,
         SysOrganizationService, SysRoleService, SysUserService, TEndpointService,
     },
-    web3::Web3WalletService,
+    web3::{Web3WalletService, Web3MarketDataService},
     SysEndpoint,
 };
 use tower_http::trace::TraceLayer;
@@ -324,6 +324,9 @@ pub async fn initialize_admin_router() -> Router {
         false,
         None
     );
+
+    // Add Web3MarketDataService as additional extension
+    app = app.layer(Extension(Arc::new(Web3MarketDataService)));
 
     app = app.fallback(handler_404);
 

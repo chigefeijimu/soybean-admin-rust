@@ -6,10 +6,10 @@ use axum::{
 };
 use server_service::web3::{
     ContractCallInput, ContractCreateInput, ContractUpdateInput, 
-    TContractService, TTransactionService, TWalletService,
+    TContractService, TTransactionService, TWalletService, TMarketDataService,
     WalletBalanceInput, WalletListInput, WalletVerifyInput,
     Web3ContractService, Web3TransactionService, Web3WalletService,
-    TokenBalanceInput,
+    Web3MarketDataService, TokenBalanceInput,
 };
 
 pub struct Web3Api;
@@ -272,6 +272,216 @@ impl Web3TransactionApi {
         Extension(service): Extension<Arc<Web3TransactionService>>,
     ) -> Result<Json<serde_json::Value>, axum::response::Response> {
         match service.list_transactions(userid).await {
+            Ok(list) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+}
+
+// ============ Market Data API ============
+
+pub struct Web3MarketDataApi;
+
+impl Web3MarketDataApi {
+    /// Get token price by symbol
+    pub async fn get_token_price(
+        Path(symbol): Path<String>,
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_token_price(&symbol).await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get all token prices
+    pub async fn get_all_prices(
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_all_prices().await {
+            Ok(list) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get market overview
+    pub async fn get_market_overview(
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_market_overview().await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get gas price for a chain
+    pub async fn get_gas_price(
+        Path(chain_id): Path<u64>,
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_gas_price(chain_id).await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get DeFi protocols
+    pub async fn get_defi_protocols(
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_defi_protocols().await {
+            Ok(list) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get price history
+    pub async fn get_price_history(
+        Path((symbol, days)): Path<(String, u32)>,
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_price_history(&symbol, days).await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Search tokens
+    pub async fn search_tokens(
+        Path(query): Path<String>,
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.search_tokens(&query).await {
+            Ok(list) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get trending tokens
+    pub async fn get_trending(
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_trending().await {
+            Ok(list) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get top gainers
+    pub async fn get_top_gainers(
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_top_gainers().await {
+            Ok(list) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get top losers
+    pub async fn get_top_losers(
+        Extension(service): Extension<Arc<Web3MarketDataService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_top_losers().await {
             Ok(list) => Ok(Json(serde_json::json!({
                 "code": 200,
                 "data": list,

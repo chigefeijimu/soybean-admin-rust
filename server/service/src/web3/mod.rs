@@ -6,6 +6,7 @@ pub mod alloy_provider;
 pub mod alloy_provider_v2;
 pub mod erc20;
 pub mod contract_call_impl;
+pub mod market_data;
 
 use async_trait::async_trait;
 use chrono::Local;
@@ -637,5 +638,77 @@ impl TTransactionService for Web3TransactionService {
             error_message: t.error_message,
             created_at: t.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
         }).collect())
+    }
+}
+
+// ============ Market Data Service ============
+use market_data::{
+    TokenPrice, MarketOverview, GasPrice, DeFiProtocol, PriceHistory,
+    MarketDataService as MarketDataServiceImpl,
+};
+
+lazy_static::lazy_static! {
+    static ref MARKET_DATA_SERVICE: MarketDataServiceImpl = MarketDataServiceImpl::new();
+}
+
+#[async_trait]
+pub trait TMarketDataService {
+    async fn get_token_price(&self, symbol: &str) -> Result<TokenPrice, ServiceError>;
+    async fn get_all_prices(&self) -> Result<Vec<TokenPrice>, ServiceError>;
+    async fn get_market_overview(&self) -> Result<MarketOverview, ServiceError>;
+    async fn get_gas_price(&self, chain_id: u64) -> Result<GasPrice, ServiceError>;
+    async fn get_defi_protocols(&self) -> Result<Vec<DeFiProtocol>, ServiceError>;
+    async fn get_price_history(&self, symbol: &str, days: u32) -> Result<PriceHistory, ServiceError>;
+    async fn search_tokens(&self, query: &str) -> Result<Vec<TokenPrice>, ServiceError>;
+    async fn get_trending(&self) -> Result<Vec<TokenPrice>, ServiceError>;
+    async fn get_top_gainers(&self) -> Result<Vec<TokenPrice>, ServiceError>;
+    async fn get_top_losers(&self) -> Result<Vec<TokenPrice>, ServiceError>;
+}
+
+#[derive(Clone)]
+pub struct Web3MarketDataService;
+
+#[async_trait]
+impl TMarketDataService for Web3MarketDataService {
+    async fn get_token_price(&self, symbol: &str) -> Result<TokenPrice, ServiceError> {
+        MARKET_DATA_SERVICE
+            .get_price(symbol)
+            .ok_or_else(|| ServiceError::new("Token not found"))
+    }
+
+    async fn get_all_prices(&self) -> Result<Vec<TokenPrice>, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_all_prices())
+    }
+
+    async fn get_market_overview(&self) -> Result<MarketOverview, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_market_overview())
+    }
+
+    async fn get_gas_price(&self, chain_id: u64) -> Result<GasPrice, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_gas_price(chain_id))
+    }
+
+    async fn get_defi_protocols(&self) -> Result<Vec<DeFiProtocol>, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_defi_protocols())
+    }
+
+    async fn get_price_history(&self, symbol: &str, days: u32) -> Result<PriceHistory, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_price_history(symbol, days))
+    }
+
+    async fn search_tokens(&self, query: &str) -> Result<Vec<TokenPrice>, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.search_tokens(query))
+    }
+
+    async fn get_trending(&self) -> Result<Vec<TokenPrice>, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_trending())
+    }
+
+    async fn get_top_gainers(&self) -> Result<Vec<TokenPrice>, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_top_gainers())
+    }
+
+    async fn get_top_losers(&self) -> Result<Vec<TokenPrice>, ServiceError> {
+        Ok(MARKET_DATA_SERVICE.get_top_losers())
     }
 }
