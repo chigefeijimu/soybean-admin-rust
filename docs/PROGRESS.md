@@ -1,5 +1,54 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 07:00 - 本次)
+
+### 本次完成的功能
+1. **Redis缓存层集成** (market_data.rs):
+   - 新增 `get_cached_price` - 从Redis获取缓存价格
+   - 新增 `set_cached_price` - 缓存价格到Redis (60秒TTL)
+   - 新增 `get_cached_gas_price` - 从Redis获取缓存Gas价格
+   - 新增 `set_cached_gas_price` - 缓存Gas价格到Redis (30秒TTL)
+   - 修改 `get_price_live` - 优先从Redis缓存获取
+   - 修改 `get_gas_price_live` - 优先从Redis缓存获取
+   - 使用 `redis::AsyncCommands` 和 `get_redis_connection` 工具函数
+
+### 代码改动统计
+- 修改: `server/service/src/web3/market_data.rs` (+94行, -10行)
+- 总代码量: +84 行
+
+### 验证
+- `cargo check --package server-service` ✅
+- `cargo check --package server-api` ✅
+
+### 已完成的优化点
+- [x] Redis缓存: 价格数据 (60秒TTL)
+- [x] Redis缓存: Gas价格 (30秒TTL)
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] **Redis缓存层** ✅ (新增)
+
+### 可能的改进点
+- 私钥管理 (交易发送后端支持)
+
+## 下一步
+- 前后端集成测试
+- 私钥管理功能
+
+---
+
 ## 当前状态 (2026-02-28)
 
 ### 后端 (soybean-admin-rust) ✅

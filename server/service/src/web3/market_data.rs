@@ -1,8 +1,11 @@
 //! Market Data Service
 //! Provides cryptocurrency market data, price feeds, and analytics
 //! Supports both mock data and real CoinGecko API integration
+//! Includes Redis caching for improved performance
 
+use crate::helper::redis_helper::{get_redis_connection, RedisSource};
 use crate::web3::alloy_provider::ProviderPool;
+use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -150,13 +153,75 @@ struct CacheEntry {
 
 const CACHE_TTL: Duration = Duration::from_secs(60); // 1 minute cache
 
-/// Market data service with CoinGecko integration
+/// Market data service with CoinGecko integration and Redis caching
 pub struct MarketDataService {
     cache: HashMap<String, TokenPrice>,
     /// Price cache with timestamps for rate limiting
     price_cache: Arc<RwLock<HashMap<String, CacheEntry>>>,
     /// HTTP client
     client: reqwest::Client,
+}
+
+/// Redis cache key prefixes
+const REDIS_PRICE_PREFIX: &str = "web3:price:";
+const REDIS_GAS_PREFIX: &str = "web3:gas:";
+const REDIS_PRICE_TTL: u64 = 60; // 60 seconds for prices
+const REDIS_GAS_TTL: u64 = 30;   // 30 seconds for gas prices
+
+impl MarketDataService {
+    /// Get cached price from Redis
+    async fn get_cached_price(&self, symbol: &str) -> Option<TokenPrice> {
+        let redis_key = format!("{}{}", REDIS_PRICE_PREFIX, symbol.to_uppercase());
+        
+        match get_redis_connection(RedisSource::Primary).await {
+            Ok(mut conn) => {
+                let data: Result<String, redis::RedisError> = conn.get(&redis_key).await;
+                match data {
+                    Ok(json_str) => serde_json::from_str(&json_str).ok(),
+                    Err(_) => None
+                }
+            }
+            Err(_) => None
+        }
+    }
+    
+    /// Cache price in Redis
+    async fn set_cached_price(&self, symbol: &str, price: &TokenPrice) {
+        let redis_key = format!("{}{}", REDIS_PRICE_PREFIX, symbol.to_uppercase());
+        
+        if let Ok(mut conn) = get_redis_connection(RedisSource::Primary).await {
+            if let Ok(data) = serde_json::to_string(price) {
+                let _: Result<(), redis::RedisError> = conn.set_ex(&redis_key, data, REDIS_PRICE_TTL).await;
+            }
+        }
+    }
+    
+    /// Get cached gas price from Redis
+    async fn get_cached_gas_price(&self, chain_id: u64) -> Option<GasPrice> {
+        let redis_key = format!("{}{}", REDIS_GAS_PREFIX, chain_id);
+        
+        match get_redis_connection(RedisSource::Primary).await {
+            Ok(mut conn) => {
+                let data: Result<String, redis::RedisError> = conn.get(&redis_key).await;
+                match data {
+                    Ok(json_str) => serde_json::from_str(&json_str).ok(),
+                    Err(_) => None
+                }
+            }
+            Err(_) => None
+        }
+    }
+    
+    /// Cache gas price in Redis
+    async fn set_cached_gas_price(&self, chain_id: u64, gas_price: &GasPrice) {
+        let redis_key = format!("{}{}", REDIS_GAS_PREFIX, chain_id);
+        
+        if let Ok(mut conn) = get_redis_connection(RedisSource::Primary).await {
+            if let Ok(data) = serde_json::to_string(gas_price) {
+                let _: Result<(), redis::RedisError> = conn.set_ex(&redis_key, data, REDIS_GAS_TTL).await;
+            }
+        }
+    }
 }
 
 impl MarketDataService {
@@ -368,15 +433,24 @@ impl MarketDataService {
         vec![]
     }
 
-    /// Get price (with optional live fetch)
+    /// Get price (with Redis cache + optional live fetch)
     pub async fn get_price_live(&self, symbol: &str) -> Option<TokenPrice> {
-        // Try to fetch from CoinGecko first
-        if let Some(price) = self.fetch_price_from_coingecko(symbol).await {
+        let upper_symbol = symbol.to_uppercase();
+        
+        // 1. Try Redis cache first
+        if let Some(cached) = self.get_cached_price(&upper_symbol).await {
+            return Some(cached);
+        }
+        
+        // 2. Try to fetch from CoinGecko
+        if let Some(price) = self.fetch_price_from_coingecko(&upper_symbol).await {
+            // Cache the result in Redis
+            self.set_cached_price(&upper_symbol, &price).await;
             return Some(price);
         }
         
-        // Fallback to cached/mock data
-        self.get_price(symbol).cloned()
+        // 3. Fallback to in-memory cache/mock data
+        self.get_price(&upper_symbol).cloned()
     }
 
     /// Get multiple prices (with optional live fetch)
@@ -467,10 +541,15 @@ impl MarketDataService {
         }
     }
     
-    /// Get live gas price from RPC (EIP-1559 support)
+    /// Get live gas price from RPC (EIP-1559 support) with Redis caching
     /// Returns real-time gas price data from blockchain
     pub async fn get_gas_price_live(&self, chain_id: u64) -> Result<GasPrice, String> {
-        // Try to get provider from pool
+        // 1. Try Redis cache first
+        if let Some(cached) = self.get_cached_gas_price(chain_id).await {
+            return Ok(cached);
+        }
+        
+        // 2. Try to get provider from pool
         let pool = PROVIDER_POOL.clone();
         
         let provider_result = pool.get_provider(chain_id).await;
@@ -498,14 +577,19 @@ impl MarketDataService {
                         let normal = base_fee;
                         let fast = ((base_fee as f64) * 1.3).round() as u64;
                         
-                        Ok(GasPrice {
+                        let gas_price = GasPrice {
                             slow: slow.max(1),
                             normal: normal.max(1),
                             fast: fast.max(1),
                             base_fee,
                             priority_fee,
                             chain_id,
-                        })
+                        };
+                        
+                        // Cache in Redis
+                        self.set_cached_gas_price(chain_id, &gas_price).await;
+                        
+                        Ok(gas_price)
                     }
                     Err(e) => {
                         // Fallback to mock data on error
