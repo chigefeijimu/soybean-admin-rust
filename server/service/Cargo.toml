@@ -28,6 +28,8 @@ lazy_static = "1.4"
 hex = "0.4"
 serde_json = "1.0"
 reqwest = { workspace = true }
+alloy.workspace = true
+alloy-primitives.workspace = true
 
 [features]
 default = ["debug-print"]

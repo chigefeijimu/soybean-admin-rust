@@ -78,6 +78,12 @@ impl Web3Router {
                 "Web3ContractApi",
                 "Call contract method",
             ),
+            RouteInfo::new(
+                &format!("{}/contract/token-balances", base_path),
+                Method::POST,
+                "Web3ContractApi",
+                "Get token balances for address",
+            ),
         ];
 
         // Transaction routes
@@ -111,6 +117,7 @@ impl Web3Router {
             .route("/contract/{id}", put(Web3ContractApi::update_contract))
             .route("/contract/{id}", delete(Web3ContractApi::delete_contract))
             .route("/contract/{id}/call", post(Web3ContractApi::call_contract))
+            .route("/contract/token-balances", post(Web3ContractApi::get_token_balances))
             // Transaction routes
             .route("/transaction/list", get(Web3TransactionApi::list_transactions));
 

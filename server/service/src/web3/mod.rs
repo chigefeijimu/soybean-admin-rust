@@ -3,6 +3,9 @@
 // =========================================
 
 pub mod alloy_provider;
+pub mod alloy_provider_v2;
+pub mod erc20;
+pub mod contract_call_impl;
 
 use async_trait::async_trait;
 use chrono::Local;
@@ -99,6 +102,14 @@ pub struct ContractCallInput {
     pub value: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalanceInput {
+    pub owner_address: String,
+    pub token_addresses: Vec<String>,
+    pub chain_id: Option<i32>,
+}
+
 // ============ Output Types ============
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -151,6 +162,23 @@ pub struct TransactionInfo {
     pub from_address: Option<String>,
     pub error_message: Option<String>,
     pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalance {
+    pub token_address: String,
+    pub balance: String,
+    pub decimals: u8,
+    pub formatted_balance: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenBalanceList {
+    pub owner_address: String,
+    pub chain_id: u64,
+    pub balances: Vec<TokenBalance>,
 }
 
 // ============ Helper ============
@@ -310,6 +338,7 @@ pub trait TContractService {
     async fn update_contract(&self, input: ContractUpdateInput) -> Result<ContractInfo, ServiceError>;
     async fn delete_contract(&self, id: &str) -> Result<(), ServiceError>;
     async fn call_contract(&self, input: ContractCallInput) -> Result<ContractCallOutput, ServiceError>;
+    async fn get_token_balances(&self, input: TokenBalanceInput) -> Result<TokenBalanceList, ServiceError>;
 }
 
 #[derive(Clone)]
@@ -441,9 +470,9 @@ impl TContractService for Web3ContractService {
 
         let chain_id = contract.chain_id as u64;
         
-        // Get provider from pool (for future use with actual contract calls)
+        // Get provider from pool to get RPC URL
         let pool = PROVIDER_POOL.clone();
-        let _provider: Provider = pool.get_provider(chain_id)
+        let provider: Provider = pool.get_provider(chain_id)
             .await
             .map_err(|e| ServiceError::new(&e.to_string()))?;
 
@@ -454,19 +483,31 @@ impl TContractService for Web3ContractService {
 
         let now = Local::now().naive_local();
         
-        // Try to call the contract
-        let result: Result<String, Box<dyn std::error::Error + Send + Sync>> = match input.method_name.as_str() {
-            // Read-only calls (view/pure functions)
-            "name" | "symbol" | "decimals" | "totalSupply" | "balanceOf" => {
-                // For view calls, we'd need the contract ABI
-                // This is a placeholder - full implementation would use alloy's contract binding
-                Ok(format!("Call {} on {}", input.method_name, contract.contract_address))
-            },
-            // Write operations - return tx data for frontend to sign
-            _ => {
-                Ok(format!("Write operation {} requires wallet signature", input.method_name))
+        // Clone params for use in async block
+        let params_clone = input.params.clone();
+        
+        // Get RPC URL from provider
+        let rpc_url = provider.rpc_url.clone();
+        
+        // Execute actual contract call using contract_call_impl
+        let result: Result<String, Box<dyn std::error::Error + Send + Sync>> = async {
+            match input.method_name.as_str() {
+                // Read-only calls (view/pure functions)
+                "name" | "symbol" | "decimals" | "totalSupply" | "balanceOf" | "allowance" => {
+                    let call_result = contract_call_impl::execute_contract_read(
+                        &rpc_url,
+                        &contract.contract_address,
+                        &input.method_name,
+                        params_clone.map(|p| vec![p]).unwrap_or_default(),
+                    ).await?;
+                    Ok(call_result)
+                },
+                // Write operations - require wallet signature (return tx data)
+                _ => {
+                    Err(format!("Write operation '{}' requires wallet signature via frontend", input.method_name).into())
+                }
             }
-        };
+        }.await;
 
         let (success, tx_hash, error_msg, result_str) = match result {
             Ok(res) => (true, None, None, Some(res)),
@@ -496,6 +537,66 @@ impl TContractService for Web3ContractService {
             tx_hash,
             result: result_str,
             error: None,
+        })
+    }
+
+    async fn get_token_balances(&self, input: TokenBalanceInput) -> Result<TokenBalanceList, ServiceError> {
+        let chain_id = input.chain_id.unwrap_or(1) as u64;
+        
+        // Get provider from pool
+        let pool = PROVIDER_POOL.clone();
+        let provider: Provider = pool.get_provider(chain_id)
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+
+        let rpc_url = provider.rpc_url.clone();
+        let owner = input.owner_address.to_lowercase();
+        
+        let mut balances = Vec::new();
+        
+        for token_addr in input.token_addresses {
+            let token_addr_lower = token_addr.to_lowercase();
+            
+            // Get decimals first
+            let decimals_result = contract_call_impl::execute_contract_read(
+                &rpc_url,
+                &token_addr_lower,
+                "decimals",
+                vec![]
+            ).await;
+            
+            let decimals = decimals_result
+                .ok()
+                .and_then(|s| s.parse::<u8>().ok())
+                .unwrap_or(18);
+            
+            // Get balance
+            let balance_result = contract_call_impl::get_erc20_balance(
+                &rpc_url,
+                &token_addr_lower,
+                &owner
+            ).await;
+            
+            let (balance, formatted) = match balance_result {
+                Ok(bal) => {
+                    let formatted = contract_call_impl::format_token_balance(bal, decimals);
+                    (bal.to_string(), formatted)
+                },
+                Err(_) => ("0".to_string(), "0".to_string()),
+            };
+            
+            balances.push(TokenBalance {
+                token_address: token_addr_lower,
+                balance,
+                decimals,
+                formatted_balance: formatted,
+            });
+        }
+
+        Ok(TokenBalanceList {
+            owner_address: owner,
+            chain_id,
+            balances,
         })
     }
 }

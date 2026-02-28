@@ -10,7 +10,8 @@
 server/
 ├── service/src/web3/
 │   ├── mod.rs              # Web3 服务层 (核心业务逻辑)
-│   ├── alloy_provider.rs   # 区块链交互模块
+│   ├── alloy_provider.rs   # 区块链交互模块 (HTTP)
+│   ├── alloy_provider_v2.rs # Alloy 官方库实现 (推荐)
 │   └── contract_call_impl.rs  # 合约调用实现(预留)
 ├── api/src/web3/
 │   └── mod.rs             # API 处理器
@@ -86,6 +87,33 @@ pub mod signature {
     // 生成签名消息
     pub fn generate_sign_message(nonce: &str) -> String
 }
+```
+
+#### Alloy Provider V2 (官方库实现)
+
+> **推荐**: 使用 `alloy_provider_v2.rs` 获取完整功能
+
+```rust
+use crate::web3::alloy_provider_v2::{AlloyProvider, pool::AlloyProviderPool};
+
+// 支持更多链
+pub enum ChainInfo {
+    ETHEREUM,      // Chain ID: 1
+    SEPOLIA,       // Chain ID: 11155111
+    POLYGON,       // Chain ID: 137
+    ARBITRUM,      // Chain ID: 42161
+    OPTIMISM,      // Chain ID: 10
+}
+
+// 创建 Provider
+let provider = AlloyProvider::new("https://eth.llamarpc.com", 1).await?;
+
+// 获取余额
+let balance = provider.get_balance("0x...").await?;
+
+// 获取代币余额 (ERC20)
+use crate::web3::alloy_provider_v2::erc20;
+let token_balance = erc20::get_token_balance(&provider, token_addr, owner_addr).await?;
 ```
 
 ### 2. mod.rs - 服务层
