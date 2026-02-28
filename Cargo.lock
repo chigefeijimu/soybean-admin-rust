@@ -7098,6 +7098,7 @@ dependencies = [
  "chrono",
  "hex",
  "lazy_static",
+ "lru 0.12.5",
  "mongodb",
  "pbkdf2 0.12.2",
  "rand 0.8.5",

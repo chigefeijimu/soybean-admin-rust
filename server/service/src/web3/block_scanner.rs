@@ -3,6 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+
 use tokio::sync::RwLock;
 
 /// Block information
@@ -81,17 +82,17 @@ impl Default for ScanFilter {
     }
 }
 
-/// Cache for block data
+/// Cache for block data (simple implementation using HashMap)
 pub struct BlockCache {
-    blocks: RwLock<lru::LruCache<u64, BlockInfo>>,
-    receipts: RwLock<lru::LruCache<String, TransactionReceipt>>,
+    blocks: RwLock<std::collections::HashMap<u64, BlockInfo>>,
+    receipts: RwLock<std::collections::HashMap<String, TransactionReceipt>>,
 }
 
 impl BlockCache {
-    pub fn new(capacity: usize) -> Self {
+    pub fn new(_capacity: usize) -> Self {
         Self {
-            blocks: RwLock::new(lru::LruCache::new(capacity)),
-            receipts: RwLock::new(lru::LruCache::new(capacity * 100)),
+            blocks: RwLock::new(std::collections::HashMap::new()),
+            receipts: RwLock::new(std::collections::HashMap::new()),
         }
     }
     
@@ -102,7 +103,7 @@ impl BlockCache {
     
     pub async fn insert_block(&self, block: BlockInfo) {
         let mut blocks = self.blocks.write().await;
-        blocks.put(block.number, block);
+        blocks.insert(block.number, block);
     }
     
     pub async fn get_receipt(&self, tx_hash: &str) -> Option<TransactionReceipt> {
@@ -112,11 +113,12 @@ impl BlockCache {
     
     pub async fn insert_receipt(&self, receipt: TransactionReceipt) {
         let mut receipts = self.receipts.write().await;
-        receipts.put(receipt.transaction_hash.clone(), receipt);
+        receipts.insert(receipt.transaction_hash.clone(), receipt);
     }
 }
 
 /// Block scanner service
+#[allow(dead_code)]
 pub struct BlockScanner {
     cache: Arc<BlockCache>,
     rpc_url: String,
@@ -262,7 +264,7 @@ impl BlockScanner {
     }
     
     /// Get block by hash
-    pub async fn get_block_by_hash(&self, hash: &str) -> Result<Option<BlockInfo>, String> {
+    pub async fn get_block_by_hash(&self, _hash: &str) -> Result<Option<BlockInfo>, String> {
         // In production, query by hash
         // For demo, return None
         Ok(None)

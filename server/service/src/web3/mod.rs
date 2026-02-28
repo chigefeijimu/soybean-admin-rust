@@ -10,6 +10,7 @@ pub mod market_data;
 pub mod receipt_parser;
 pub mod transaction_decoder;
 pub mod key_manager;
+pub mod block_scanner;
 
 use async_trait::async_trait;
 use chrono::Local;
@@ -685,6 +686,7 @@ impl TContractService for Web3ContractService {
 
 // ============ Transaction Service ============
 pub use receipt_parser::{ParsedReceipt, TransactionReceipt};
+pub use block_scanner::{BlockInfo, ScanResult, ScanFilter, TransactionAnalysis};
 
 #[async_trait]
 pub trait TTransactionService {

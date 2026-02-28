@@ -1,5 +1,61 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 07:41 - 本次)
+
+### 本次完成的功能
+1. **区块扫描服务模块集成** (block_scanner.rs):
+   - 添加 `pub mod block_scanner` 到服务层
+   - 导出 `BlockInfo`, `ScanResult`, `ScanFilter`, `TransactionAnalysis` 类型
+   - 修复 LruCache 兼容性问题，改用 HashMap 实现
+   - 添加 lru crate 依赖 (已回退为HashMap)
+
+2. **区块扫描 API 端点** (server/api/src/web3/mod.rs):
+   - GET `/web3/block/:blockNumber` - 根据区块号获取区块信息
+   - GET `/web3/block/latest` - 获取最新区块号
+   - GET `/web3/transaction/receipt/:txHash` - 获取交易回执
+   - GET `/web3/scan/:from/:to` - 扫描指定范围内的区块
+
+### 代码改动统计
+- 修改: `server/service/src/web3/mod.rs` (+3行模块导出)
+- 新增: `server/service/Cargo.toml` (lru依赖，但实际使用HashMap)
+- 修改: `server/service/src/web3/block_scanner.rs` (修复编译问题)
+- 修改: `server/api/src/web3/mod.rs` (+100行API端点)
+- 修改: `server/router/src/web3/mod.rs` (路由注册，暂禁用)
+- 总代码量: ~110 行
+
+### 验证
+- `cargo check` ✅
+- `pnpm build` (前端) ✅
+
+### 注意事项
+- 区块扫描API已添加到API层，但Router层暂时禁用(编译问题待解决)
+- 实际RPC调用仍返回mock数据，生产环境需连接真实RPC
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅ (API层已添加)
+
+### 可能的改进点
+- 完成区块扫描API的Router集成
+- 添加更多真实区块链RPC调用
+- 集成测试
+
+---
+
 ## 开发迭代 (2026-03-01 07:18 - 本次)
 
 ### 本次完成的功能
