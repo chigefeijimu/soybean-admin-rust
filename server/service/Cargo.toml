@@ -30,6 +30,11 @@ serde_json = "1.0"
 reqwest = { workspace = true }
 alloy.workspace = true
 alloy-primitives.workspace = true
+aes-gcm = "0.10"
+base64 = "0.22"
+pbkdf2 = "0.12"
+sha2 = "0.10"
+rand = "0.8"
 
 [features]
 default = ["debug-print"]

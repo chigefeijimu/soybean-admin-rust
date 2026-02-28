@@ -9,6 +9,7 @@ pub mod contract_call_impl;
 pub mod market_data;
 pub mod receipt_parser;
 pub mod transaction_decoder;
+pub mod key_manager;
 
 use async_trait::async_trait;
 use chrono::Local;
@@ -805,5 +806,162 @@ impl TMarketDataService for Web3MarketDataService {
 
     async fn get_top_losers(&self) -> Result<Vec<TokenPrice>, ServiceError> {
         Ok(MARKET_DATA_SERVICE.get_top_losers())
+    }
+}
+
+// ============ Key Manager Service ============
+use key_manager::{EncryptedPrivateKey, PrivateKeyEncryptor, is_valid_private_key, private_key_to_address};
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeyCreateInput {
+    pub name: String,
+    pub private_key: String,
+    pub chain_id: Option<i32>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeyInfo {
+    pub id: String,
+    pub name: String,
+    pub address: String,
+    pub chain_id: i32,
+    pub description: Option<String>,
+    pub created_at: String,
+}
+
+pub struct Web3KeyManagerService;
+
+impl Web3KeyManagerService {
+    /// 创建加密的私钥存储
+    pub async fn create_key(input: KeyCreateInput) -> Result<KeyInfo, ServiceError> {
+        // 验证私钥格式
+        if !is_valid_private_key(&input.private_key) {
+            return Err(ServiceError::new("Invalid private key format"));
+        }
+        
+        // 从私钥获取地址
+        let address = private_key_to_address(&input.private_key)
+            .map_err(|e| ServiceError::new(&e))?;
+        
+        // 使用密码加密私钥
+        let password = std::env::var("APP_JWT_JWT_SECRET")
+            .unwrap_or_else(|_| "default-secret-key".to_string());
+        let encryptor = PrivateKeyEncryptor::new(&password);
+        
+        let encrypted = encryptor.encrypt(&input.private_key)
+            .map_err(|e| ServiceError::new(&e))?;
+        
+        // 保存到数据库
+        let db = get_db().await?;
+        let id = Ulid::new().to_string();
+        let now = chrono::Local::now().naive_local();
+        
+        let chain_id = input.chain_id.unwrap_or(1); // 默认 Ethereum
+        let description = input.description.clone();
+        
+        let key = server_model::web3::entities::web3_wallet::ActiveModel {
+            id: Set(id.clone()),
+            user_id: Set(Some("key_manager".to_string())),
+            wallet_address: Set(address.clone()),
+            wallet_type: Set("encrypted_key".to_string()),
+            chain_id: Set(chain_id),
+            signature: Set(Some(serde_json::to_string(&encrypted).map_err(|e| ServiceError::new(&format!("{}", e)))?)),
+            message: Set(description.clone()),
+            created_at: Set(now),
+            updated_at: Set(None),
+        };
+        
+        key.insert(db.as_ref())
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+        
+        Ok(KeyInfo {
+            id,
+            name: input.name,
+            address,
+            chain_id,
+            description,
+            created_at: now.format("%Y-%m-%d %H:%M:%S").to_string(),
+        })
+    }
+    
+    /// 列出所有私钥（只返回地址，不返回私钥）
+    pub async fn list_keys() -> Result<Vec<KeyInfo>, ServiceError> {
+        let db = get_db().await?;
+        
+        let keys = server_model::web3::entities::prelude::Web3Wallet::find()
+            .filter(server_model::web3::entities::web3_wallet::Column::WalletType.eq("encrypted_key"))
+            .all(db.as_ref())
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+        
+        Ok(keys.into_iter().map(|k| {
+            let msg = k.message.clone();
+            KeyInfo {
+                id: k.id,
+                name: msg.clone().unwrap_or_else(|| "Unnamed".to_string()),
+                address: k.wallet_address,
+                chain_id: k.chain_id,
+                description: msg,
+                created_at: k.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+            }
+        }).collect())
+    }
+    
+    /// 删除私钥
+    pub async fn delete_key(id: &str) -> Result<(), ServiceError> {
+        let db = get_db().await?;
+        
+        let key: server_model::web3::entities::web3_wallet::Model = 
+            server_model::web3::entities::prelude::Web3Wallet::find_by_id(id)
+            .one(db.as_ref())
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?
+            .ok_or_else(|| ServiceError::new("Key not found"))?;
+        
+        // 确认是加密私钥类型
+        if key.wallet_type != "encrypted_key" {
+            return Err(ServiceError::new("Not an encrypted key"));
+        }
+        
+        server_model::web3::entities::web3_wallet::Entity::delete_by_id(id)
+            .exec(db.as_ref())
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+        
+        Ok(())
+    }
+    
+    /// 解密私钥（仅用于交易签名）
+    pub async fn decrypt_key(id: &str) -> Result<String, ServiceError> {
+        let db = get_db().await?;
+        
+        let key: server_model::web3::entities::web3_wallet::Model = 
+            server_model::web3::entities::prelude::Web3Wallet::find_by_id(id)
+            .one(db.as_ref())
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?
+            .ok_or_else(|| ServiceError::new("Key not found"))?;
+        
+        // 确认是加密私钥类型
+        if key.wallet_type != "encrypted_key" {
+            return Err(ServiceError::new("Not an encrypted key"));
+        }
+        
+        // 获取加密数据
+        let encrypted_str = key.signature.ok_or_else(|| ServiceError::new("No encrypted data"))?;
+        let encrypted: EncryptedPrivateKey = serde_json::from_str(&encrypted_str)
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+        
+        // 解密
+        let password = std::env::var("APP_JWT_JWT_SECRET")
+            .unwrap_or_else(|_| "default-secret-key".to_string());
+        let encryptor = PrivateKeyEncryptor::new(&password);
+        
+        encryptor.decrypt(&encrypted)
+            .map_err(|e| ServiceError::new(&e))
     }
 }

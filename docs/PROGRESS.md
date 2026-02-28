@@ -1,5 +1,49 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 07:18 - 本次)
+
+### 本次完成的功能
+1. **私钥管理模块** (key_manager.rs):
+   - 新增 `PrivateKeyEncryptor` - 使用 AES-256-GCM 加密私钥
+   - 新增 `EncryptedPrivateKey` - 加密私钥数据结构
+   - 新增 `is_valid_private_key` - 验证私钥格式
+   - 新增 `private_key_to_address` - 从私钥导出地址
+   - 新增 `Web3KeyManagerService` - 私钥管理服务
+     - `create_key` - 创建加密私钥存储
+     - `list_keys` - 列出所有私钥
+     - `delete_key` - 删除私钥
+     - `decrypt_key` - 解密私钥（用于交易签名）
+
+2. **私钥管理 API**:
+   - POST `/api/web3/key` - 创建加密私钥
+   - GET `/api/web3/key/list` - 列出私钥
+   - DELETE `/api/web3/key/:id` - 删除私钥
+
+### 代码改动统计
+- 新增: `server/service/src/web3/key_manager.rs` (~150行)
+- 修改: `server/service/src/web3/mod.rs` (+60行)
+- 修改: `server/service/Cargo.toml` (新增依赖)
+- 修改: `server/api/src/web3/mod.rs` (+60行)
+- 修改: `server/router/src/web3/mod.rs` (+20行)
+- 总代码量: ~290 行
+
+### 验证
+- `cargo check --package server-service` ✅
+- `cargo check --package server-api` ✅
+- `cargo check` ✅
+
+### 新增依赖
+- aes-gcm = "0.10"
+- base64 = "0.22"
+- pbkdf2 = "0.12"
+- sha2 = "0.10"
+- rand = "0.8"
+
+### 已完成的优化点
+- [x] 私钥管理: AES-256-GCM 加密存储
+
+---
+
 ## 开发迭代 (2026-03-01 07:00 - 本次)
 
 ### 本次完成的功能

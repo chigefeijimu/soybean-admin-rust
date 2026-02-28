@@ -10,8 +10,9 @@ use server_service::web3::{
     WalletBalanceInput, WalletListInput, WalletVerifyInput,
     Web3ContractService, Web3TransactionService, Web3WalletService,
     Web3MarketDataService, TokenBalanceInput, TransactionReceipt,
-    DirectContractCallInput,
+    DirectContractCallInput, KeyCreateInput,
 };
+pub use server_service::web3::Web3KeyManagerService;
 
 pub struct Web3Api;
 
@@ -99,6 +100,67 @@ impl Web3Api {
                 "msg": e.message,
                 "success": false
             }))),
+        }
+    }
+
+    // ============ Key Manager API ============
+
+    /// Create encrypted key
+    pub async fn create_key(
+        Json(input): Json<KeyCreateInput>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match Web3KeyManagerService::create_key(input).await {
+            Ok(key) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": key,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// List encrypted keys
+    pub async fn list_keys(
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match Web3KeyManagerService::list_keys().await {
+            Ok(list) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Delete encrypted key
+    pub async fn delete_key(
+        Path(id): Path<String>,
+    ) -> Json<serde_json::Value> {
+        match Web3KeyManagerService::delete_key(&id).await {
+            Ok(_) => Json(serde_json::json!({
+                "code": 200,
+                "data": true,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            })),
         }
     }
 }
@@ -539,4 +601,5 @@ impl Web3MarketDataApi {
             }))),
         }
     }
+
 }

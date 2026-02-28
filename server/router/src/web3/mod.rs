@@ -166,11 +166,34 @@ impl Web3Router {
             ),
         ];
 
+        // Key manager routes
+        let key_routes = vec![
+            RouteInfo::new(
+                &format!("{}/key", base_path),
+                Method::POST,
+                "Web3Api",
+                "Create encrypted key",
+            ),
+            RouteInfo::new(
+                &format!("{}/key/list", base_path),
+                Method::GET,
+                "Web3Api",
+                "List encrypted keys",
+            ),
+            RouteInfo::new(
+                &format!("{}/key/:id", base_path),
+                Method::DELETE,
+                "Web3Api",
+                "Delete encrypted key",
+            ),
+        ];
+
         // Add all routes
         for route in wallet_routes.into_iter()
             .chain(contract_routes.into_iter())
             .chain(transaction_routes.into_iter())
-            .chain(market_data_routes.into_iter()) 
+            .chain(market_data_routes.into_iter())
+            .chain(key_routes.into_iter()) 
         {
             add_route(route).await;
         }
@@ -203,7 +226,11 @@ impl Web3Router {
             .route("/market/search/{query}", get(Web3MarketDataApi::search_tokens))
             .route("/market/trending", get(Web3MarketDataApi::get_trending))
             .route("/market/gainers", get(Web3MarketDataApi::get_top_gainers))
-            .route("/market/losers", get(Web3MarketDataApi::get_top_losers));
+            .route("/market/losers", get(Web3MarketDataApi::get_top_losers))
+            // Key manager routes
+            .route("/key", post(Web3Api::create_key))
+            .route("/key/list", get(Web3Api::list_keys))
+            .route("/key/{id}", delete(Web3Api::delete_key));
 
         router
     }

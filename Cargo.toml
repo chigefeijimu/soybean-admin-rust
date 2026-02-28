@@ -103,6 +103,9 @@ argon2 = "0.5"                                                  # argon2 加密�
 toml = "0.9"                                                    # TOML 文件格式处理库
 
 ring = "0.17"                                                   # 加密库
+aes-gcm = "0.10"                                                # AES-GCM 加密库
+pbkdf2 = "0.12"                                                 # PBKDF2 密钥派生
+sha2 = "0.10"                                                   # SHA2 哈希库
 hex = "0.4"                                                     # 二进制转换库
 md-5 = "0.10"                                                   # MD5 加密库
 urlencoding = "2.1.3"                                             # URL 编码和解码库
