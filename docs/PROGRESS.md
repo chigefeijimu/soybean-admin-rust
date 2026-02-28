@@ -631,3 +631,46 @@
 ## 下一步
 - 前后端集成测试
 - 其他前端组件API集成
+
+## 开发迭代 (2026-03-01 06:18 - 本次)
+
+### 本次完成的功能
+1. **前端PortfolioDashboard价格API集成**:
+   - 添加 `getTokenPrices` API调用获取实时价格
+   - 替换mock价格(2500)为真实ETH价格
+   - 添加代币特定价格逻辑:
+     - 稳定币 (USDC/USDT/DAI) = $1
+     - WBTC = ETH价格 * 60 (近似BTC/ETH比例)
+   - 组件启动时先获取价格再加载资产组合
+   - API失败时回退到默认价格$2500
+
+### 代码改动统计
+- 修改: `frontend/src/components/web3/PortfolioDashboard.vue` (+32行, -6行)
+- 总代码量: +26 行
+
+### 验证
+- `cargo check --package server-service` ✅
+- `pnpm build` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+
+### 可能的改进点
+- 前端ContractCall组件API集成 (当前使用浏览器钱包直接调用)
+- 私钥管理 (交易发送后端支持)
+- Redis缓存
+- Gas优化 (EIP-1559)
+
+## 下一步
+- 前后端集成测试
+- 其他前端组件API集成
