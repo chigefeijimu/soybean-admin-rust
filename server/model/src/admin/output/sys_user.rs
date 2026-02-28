@@ -14,6 +14,7 @@ pub struct UserWithDomainAndOrgOutput {
     pub avatar: Option<String>,
     pub domain_code: String,
     pub domain_name: String,
+    pub status: Status,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]

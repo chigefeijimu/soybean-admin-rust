@@ -13,6 +13,8 @@ pub enum UserError {
     UsernameAlreadyExists,
     #[error("Invalid user status")]
     InvalidUserStatus,
+    #[error("User account is disabled")]
+    UserDisabled,
 }
 
 impl ApiError for UserError {
@@ -23,6 +25,7 @@ impl ApiError for UserError {
             UserError::AuthenticationFailed => 1003,
             UserError::UsernameAlreadyExists => 1004,
             UserError::InvalidUserStatus => 1005,
+            UserError::UserDisabled => 1006,
         }
     }
 

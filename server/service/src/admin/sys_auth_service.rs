@@ -51,6 +51,7 @@ macro_rules! select_user_with_domain_and_org_info {
             .column_as(SysUserColumn::Password, "password")
             .column_as(SysUserColumn::NickName, "nick_name")
             .column_as(SysUserColumn::Avatar, "avatar")
+            .column_as(SysUserColumn::Status, "status")
             .column_as(SysDomainColumn::Code, "domain_code")
             .column_as(SysDomainColumn::Name, "domain_name")
     }};
@@ -238,7 +239,10 @@ impl SysAuthService {
             .map_err(AppError::from)?
             .ok_or_else(|| AppError::from(UserError::UserNotFound))?;
 
-        //TODO validate user status and domain status
+        // Validate user status - reject disabled users
+        if user.status == Status::Disabled {
+            return Err(UserError::UserDisabled.into());
+        }
 
         // 验证密码
         if !SecureUtil::verify_password(password.as_bytes(), &user.password)
