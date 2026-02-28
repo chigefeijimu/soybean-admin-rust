@@ -666,11 +666,59 @@
 - [x] 前端PortfolioDashboard价格API集成 ✅
 
 ### 可能的改进点
-- 前端ContractCall组件API集成 (当前使用浏览器钱包直接调用)
 - 私钥管理 (交易发送后端支持)
 - Redis缓存
-- Gas优化 (EIP-1559)
 
 ## 下一步
 - 前后端集成测试
-- 其他前端组件API集成
+
+---
+
+## 开发迭代 (2026-03-01 06:48 - 本次)
+
+### 本次完成的功能
+1. **真实Gas价格API集成 (EIP-1559支持)**:
+   - 新增 `get_gas_price_live` 异步方法，从区块链RPC获取真实gas价格
+   - 使用 `ProviderPool` 连接多链 RPC (ETH, Polygon, Arbitrum, BSC等)
+   - 估算 base_fee 和 priority_fee (EIP-1559)
+   - 提供 slow/normal/fast 三档 gas 选项
+   - 失败时自动回退到 mock 数据
+
+2. **服务层改动**:
+   - `server/service/src/web3/market_data.rs`: 添加 ProviderPool 引用和异步方法
+   - `server/service/src/web3/mod.rs`: 修改 `get_gas_price` 优先使用实时数据
+
+### 代码改动统计
+- 修改: `server/service/src/web3/market_data.rs` (+61行)
+- 修改: `server/service/src/web3/mod.rs` (+8行)
+- 总代码量: +69 行
+
+### 验证
+- `cargo check --package server-service` ✅
+- `cargo check --package server-api` ✅
+
+### 已完成的优化点
+- [x] Gas优化: EIP-1559支持，从真实RPC获取gas价格
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] **真实Gas价格API (EIP-1559)** ✅ (新增)
+
+### 可能的改进点
+- Redis缓存
+- 私钥管理 (交易发送后端支持)
+
+## 下一步
+- 前后端集成测试
+- Redis缓存层
