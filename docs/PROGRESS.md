@@ -592,3 +592,42 @@
 - 私钥管理 (交易发送)
 - Gas优化 (EIP-1559)
 - Redis缓存
+
+## 开发迭代 (2026-03-01 05:58 - 本次)
+
+### 本次完成的功能
+1. **前端交易历史组件API集成** (TransactionHistory.vue):
+   - 从mock数据改为调用后端API (getTransactionList)
+   - 添加交易回执解析功能 (parseTransactionReceipt)
+   - 新增交易详情模态框，显示Gas信息和事件日志
+   - 添加账户变化监听，自动刷新交易列表
+   - 添加错误处理，API失败时回退到mock数据
+
+### 代码改动统计
+- 修改: `frontend/src/components/web3/TransactionHistory.vue` (+170行, -27行)
+- 总代码量: +143 行
+
+### 验证
+- `pnpm build` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+
+### 可能的改进点
+- 前端PortfolioDashboard集成更多API
+- 前端ContractCall组件API集成
+- 私钥管理 (交易发送)
+- Redis缓存
+
+## 下一步
+- 前后端集成测试
+- 其他前端组件API集成
