@@ -2,11 +2,17 @@
 //! Provides cryptocurrency market data, price feeds, and analytics
 //! Supports both mock data and real CoinGecko API integration
 
+use crate::web3::alloy_provider::ProviderPool;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use std::time::{Duration, Instant};
+
+// Global provider pool for RPC calls
+lazy_static::lazy_static! {
+    static ref PROVIDER_POOL: ProviderPool = ProviderPool::new();
+}
 
 /// Format token name from CoinGecko ID (e.g., "ethereum" -> "Ethereum")
 fn format_token_name(token_id: &str) -> String {
@@ -458,6 +464,61 @@ impl MarketDataService {
                 priority_fee: 2,
                 chain_id,
             },
+        }
+    }
+    
+    /// Get live gas price from RPC (EIP-1559 support)
+    /// Returns real-time gas price data from blockchain
+    pub async fn get_gas_price_live(&self, chain_id: u64) -> Result<GasPrice, String> {
+        // Try to get provider from pool
+        let pool = PROVIDER_POOL.clone();
+        
+        let provider_result = pool.get_provider(chain_id).await;
+        
+        match provider_result {
+            Ok(provider) => {
+                // Get gas price from blockchain
+                match provider.get_gas_price().await {
+                    Ok(gas_price_str) => {
+                        // Parse hex string to u64 (wei)
+                        let gas_price_u64 = u64::from_str_radix(
+                            gas_price_str.trim_start_matches("0x"), 
+                            16
+                        ).unwrap_or(20_000_000_000); // fallback
+                        
+                        let gas_price_gwei = gas_price_u64 as f64 / 1e9;
+                        
+                        // Estimate base fee and priority fee
+                        // For EIP-1559, base_fee is typically ~70% of gas_price
+                        let base_fee = (gas_price_gwei * 0.7).round() as u64;
+                        let priority_fee = ((gas_price_gwei * 0.1).round() as u64).max(1);
+                        
+                        // Calculate slow/normal/fast options
+                        let slow = ((base_fee as f64) * 0.8).round() as u64;
+                        let normal = base_fee;
+                        let fast = ((base_fee as f64) * 1.3).round() as u64;
+                        
+                        Ok(GasPrice {
+                            slow: slow.max(1),
+                            normal: normal.max(1),
+                            fast: fast.max(1),
+                            base_fee,
+                            priority_fee,
+                            chain_id,
+                        })
+                    }
+                    Err(e) => {
+                        // Fallback to mock data on error
+                        eprintln!("[warn] Failed to get gas price from RPC: {}, using fallback", e);
+                        Ok(self.get_gas_price(chain_id))
+                    }
+                }
+            }
+            Err(e) => {
+                // Fallback to mock data if provider not available
+                eprintln!("[warn] Provider not available for chain {}: {}, using fallback", chain_id, e);
+                Ok(self.get_gas_price(chain_id))
+            }
         }
     }
     

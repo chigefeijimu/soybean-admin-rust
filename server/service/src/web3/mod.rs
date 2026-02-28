@@ -773,7 +773,14 @@ impl TMarketDataService for Web3MarketDataService {
     }
 
     async fn get_gas_price(&self, chain_id: u64) -> Result<GasPrice, ServiceError> {
-        Ok(MARKET_DATA_SERVICE.get_gas_price(chain_id))
+        // Try to get live gas price first, fallback to mock data
+        match MARKET_DATA_SERVICE.get_gas_price_live(chain_id).await {
+            Ok(gas_price) => Ok(gas_price),
+            Err(_) => {
+                // Fallback to mock data on error
+                Ok(MARKET_DATA_SERVICE.get_gas_price(chain_id))
+            }
+        }
     }
 
     async fn get_defi_protocols(&self) -> Result<Vec<DeFiProtocol>, ServiceError> {
