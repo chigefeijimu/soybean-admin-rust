@@ -10,6 +10,7 @@ use server_service::web3::{
     WalletBalanceInput, WalletListInput, WalletVerifyInput,
     Web3ContractService, Web3TransactionService, Web3WalletService,
     Web3MarketDataService, TokenBalanceInput, TransactionReceipt,
+    DirectContractCallInput,
 };
 
 pub struct Web3Api;
@@ -245,6 +246,27 @@ impl Web3ContractApi {
         Json(input): Json<TokenBalanceInput>,
     ) -> Result<Json<serde_json::Value>, axum::response::Response> {
         match service.get_token_balances(input).await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Direct contract call by address (no contract ID needed)
+    pub async fn call_contract_direct(
+        Extension(service): Extension<Arc<Web3ContractService>>,
+        Json(input): Json<DirectContractCallInput>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.call_contract_direct(input).await {
             Ok(result) => Ok(Json(serde_json::json!({
                 "code": 200,
                 "data": result,

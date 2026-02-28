@@ -113,6 +113,17 @@ pub struct TokenBalanceInput {
     pub chain_id: Option<i32>,
 }
 
+/// Direct contract call input (by contract address, not ID)
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectContractCallInput {
+    pub contract_address: String,
+    pub chain_id: Option<i32>,
+    pub method_name: String,
+    pub params: Option<String>,
+    pub from_address: Option<String>,
+}
+
 // ============ Output Types ============
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -341,6 +352,7 @@ pub trait TContractService {
     async fn update_contract(&self, input: ContractUpdateInput) -> Result<ContractInfo, ServiceError>;
     async fn delete_contract(&self, id: &str) -> Result<(), ServiceError>;
     async fn call_contract(&self, input: ContractCallInput) -> Result<ContractCallOutput, ServiceError>;
+    async fn call_contract_direct(&self, input: DirectContractCallInput) -> Result<ContractCallOutput, ServiceError>;
     async fn get_token_balances(&self, input: TokenBalanceInput) -> Result<TokenBalanceList, ServiceError>;
 }
 
@@ -532,6 +544,72 @@ impl TContractService for Web3ContractService {
             updated_at: Set(None),
         };
 
+        tx.insert(db.as_ref()).await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+
+        Ok(ContractCallOutput {
+            success,
+            tx_hash,
+            result: result_str,
+            error: None,
+        })
+    }
+
+    async fn call_contract_direct(&self, input: DirectContractCallInput) -> Result<ContractCallOutput, ServiceError> {
+        let chain_id = input.chain_id.unwrap_or(1) as u64;
+        let now = Local::now().naive_local();
+        
+        // Get provider from pool
+        let pool = PROVIDER_POOL.clone();
+        let provider: Provider = pool.get_provider(chain_id)
+            .await
+            .map_err(|e| ServiceError::new(&e.to_string()))?;
+
+        let rpc_url = provider.rpc_url.clone();
+        let contract_address = input.contract_address.to_lowercase();
+        let params_clone = input.params.clone();
+        
+        // Execute contract call
+        let result: Result<String, Box<dyn std::error::Error + Send + Sync>> = async {
+            match input.method_name.as_str() {
+                // Read-only calls (view/pure functions)
+                "name" | "symbol" | "decimals" | "totalSupply" | "balanceOf" | "allowance" => {
+                    let call_result = contract_call_impl::execute_contract_read(
+                        &rpc_url,
+                        &contract_address,
+                        &input.method_name,
+                        params_clone.map(|p| vec![p]).unwrap_or_default(),
+                    ).await?;
+                    Ok(call_result)
+                },
+                // Write operations - require wallet signature
+                _ => {
+                    Err(format!("Write operation '{}' requires wallet signature via frontend", input.method_name).into())
+                }
+            }
+        }.await;
+
+        let (success, tx_hash, error_msg, result_str) = match result {
+            Ok(res) => (true, None, None, Some(res)),
+            Err(e) => (false, None, Some(e.to_string()), None),
+        };
+
+        // Record transaction in DB (without contract_id since it's direct call)
+        let tx = server_model::web3::entities::web3_transaction::ActiveModel {
+            id: Set(Ulid::new().to_string()),
+            user_id: Set(None),
+            contract_id: Set(None),
+            method_name: Set(input.method_name.clone()),
+            params: Set(input.params.clone()),
+            tx_hash: Set(tx_hash.clone()),
+            status: Set(if success { "completed" } else { "failed" }.to_string()),
+            from_address: Set(input.from_address.clone()),
+            error_message: Set(error_msg),
+            created_at: Set(now),
+            updated_at: Set(None),
+        };
+
+        let db = get_db().await?;
         tx.insert(db.as_ref()).await
             .map_err(|e| ServiceError::new(&e.to_string()))?;
 

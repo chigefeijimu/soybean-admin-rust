@@ -189,6 +189,7 @@ impl Web3Router {
             .route("/contract/{id}", delete(Web3ContractApi::delete_contract))
             .route("/contract/{id}/call", post(Web3ContractApi::call_contract))
             .route("/contract/token-balances", post(Web3ContractApi::get_token_balances))
+            .route("/contract/call-direct", post(Web3ContractApi::call_contract_direct))
             // Transaction routes
             .route("/transaction/list", get(Web3TransactionApi::list_transactions))
             .route("/transaction/parse-receipt", post(Web3TransactionApi::parse_receipt))
