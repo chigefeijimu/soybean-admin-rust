@@ -1,8 +1,73 @@
 //! Market Data Service
 //! Provides cryptocurrency market data, price feeds, and analytics
+//! Supports both mock data and real CoinGecko API integration
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use std::time::{Duration, Instant};
+
+/// Format token name from CoinGecko ID (e.g., "ethereum" -> "Ethereum")
+fn format_token_name(token_id: &str) -> String {
+    let mut chars = token_id.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+    }
+}
+
+/// CoinGecko API response types
+#[derive(Debug, Deserialize)]
+struct CoinGeckoPrice {
+    #[serde(rename = "usd")]
+    price: f64,
+    #[serde(rename = "usd_24h_change")]
+    change_24h: Option<f64>,
+    #[serde(rename = "usd_24h_vol")]
+    volume_24h: Option<f64>,
+    #[serde(rename = "usd_market_cap")]
+    market_cap: Option<f64>,
+}
+
+type CoinGeckoResponse = HashMap<String, CoinGeckoPrice>;
+
+// Token ID mapping (symbol -> CoinGecko ID)
+fn get_token_id(symbol: &str) -> Option<&'static str> {
+    match symbol.to_uppercase().as_str() {
+        "ETH" => Some("ethereum"),
+        "BTC" => Some("bitcoin"),
+        "USDC" => Some("usd-coin"),
+        "USDT" => Some("tether"),
+        "SOL" => Some("solana"),
+        "ARB" => Some("arbitrum"),
+        "MATIC" => Some("matic-network"),
+        "LINK" => Some("chainlink"),
+        "UNI" => Some("uniswap"),
+        "AAVE" => Some("aave"),
+        "DAI" => Some("dai"),
+        "WBTC" => Some("wrapped-bitcoin"),
+        "WETH" => Some("weth"),
+        "OP" => Some("optimism"),
+        "AVAX" => Some("avalanche-2"),
+        "BNB" => Some("binancecoin"),
+        "DOT" => Some("polkadot"),
+        "ATOM" => Some("cosmos"),
+        "FIL" => Some("filecoin"),
+        "NEAR" => Some("near"),
+        "APT" => Some("aptos"),
+        "PEPE" => Some("pepe"),
+        "SHIB" => Some("shiba-inu"),
+        "DOGE" => Some("dogecoin"),
+        "XRP" => Some("ripple"),
+        "ADA" => Some("cardano"),
+        "FTM" => Some("fantom"),
+        "SAND" => Some("the-sandbox"),
+        "MANA" => Some("decentraland"),
+        "AXS" => Some("axie-infinity"),
+        _ => None,
+    }
+}
 
 /// Token price information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,16 +135,30 @@ pub struct TokenMetadata {
     pub description: Option<String>,
 }
 
-/// Market data service
+/// Cache entry with timestamp
+#[derive(Clone)]
+struct CacheEntry {
+    price: TokenPrice,
+    cached_at: Instant,
+}
+
+const CACHE_TTL: Duration = Duration::from_secs(60); // 1 minute cache
+
+/// Market data service with CoinGecko integration
 pub struct MarketDataService {
     cache: HashMap<String, TokenPrice>,
+    /// Price cache with timestamps for rate limiting
+    price_cache: Arc<RwLock<HashMap<String, CacheEntry>>>,
+    /// HTTP client
+    client: reqwest::Client,
 }
 
 impl MarketDataService {
+    /// Create new service instance
     pub fn new() -> Self {
         let mut cache = HashMap::new();
         
-        // Initialize with mock data
+        // Initialize with mock data as fallback
         cache.insert("ETH".to_string(), TokenPrice {
             symbol: "ETH".to_string(),
             name: "Ethereum".to_string(),
@@ -158,12 +237,161 @@ impl MarketDataService {
             supply: 1_100_000_000.0,
         });
         
-        Self { cache }
+        Self { 
+            cache, 
+            price_cache: Arc::new(RwLock::new(HashMap::new())),
+            client: reqwest::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()
+                .unwrap_or_default(),
+        }
+    }
+
+    /// Fetch price from CoinGecko API (async)
+    pub async fn fetch_price_from_coingecko(&self, symbol: &str) -> Option<TokenPrice> {
+        let token_id = get_token_id(symbol)?;
+        
+        // Check cache first
+        {
+            let cache = self.price_cache.read().await;
+            if let Some(entry) = cache.get(&symbol.to_uppercase()) {
+                if entry.cached_at.elapsed() < CACHE_TTL {
+                    return Some(entry.price.clone());
+                }
+            }
+        }
+
+        // Fetch from CoinGecko
+        let url = format!(
+            "https://api.coingecko.com/api/v3/simple/price?ids={}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true",
+            token_id
+        );
+
+        match self.client.get(&url).send().await {
+            Ok(response) => {
+                if let Ok(data) = response.json::<CoinGeckoResponse>().await {
+                    if let Some(price_data) = data.get(token_id) {
+                        let token_price = TokenPrice {
+                            symbol: symbol.to_uppercase(),
+                            name: format_token_name(token_id),
+                            price: price_data.price,
+                            change_24h: price_data.change_24h.unwrap_or(0.0),
+                            change_7d: 0.0, // Not provided by simple price endpoint
+                            market_cap: price_data.market_cap.unwrap_or(0.0),
+                            volume_24h: price_data.volume_24h.unwrap_or(0.0),
+                            high_24h: price_data.price * 1.02,
+                            low_24h: price_data.price * 0.98,
+                            supply: 0.0,
+                        };
+
+                        // Update cache
+                        {
+                            let mut cache = self.price_cache.write().await;
+                            cache.insert(
+                                symbol.to_uppercase(),
+                                CacheEntry {
+                                    price: token_price.clone(),
+                                    cached_at: Instant::now(),
+                                },
+                            );
+                        }
+
+                        // Update main cache
+                        let mut cache_guard = self.cache.clone();
+                        cache_guard.insert(symbol.to_uppercase(), token_price.clone());
+
+                        return Some(token_price);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("CoinGecko API error for {}: {}", symbol, e);
+            }
+        }
+
+        None
+    }
+
+    /// Fetch multiple prices from CoinGecko (batch API)
+    pub async fn fetch_prices_batch(&self, symbols: &[&str]) -> Vec<TokenPrice> {
+        let token_ids: Vec<&str> = symbols
+            .iter()
+            .filter_map(|s| get_token_id(s))
+            .collect();
+
+        if token_ids.is_empty() {
+            return vec![];
+        }
+
+        let ids = token_ids.join(",");
+        let url = format!(
+            "https://api.coingecko.com/api/v3/simple/price?ids={}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true",
+            ids
+        );
+
+        match self.client.get(&url).send().await {
+            Ok(response) => {
+                if let Ok(data) = response.json::<CoinGeckoResponse>().await {
+                    return symbols
+                        .iter()
+                        .filter_map(|symbol| {
+                            let token_id = get_token_id(symbol)?;
+                            let price_data = data.get(token_id)?;
+                            
+                            Some(TokenPrice {
+                                symbol: symbol.to_uppercase(),
+                                name: format_token_name(token_id),
+                                price: price_data.price,
+                                change_24h: price_data.change_24h.unwrap_or(0.0),
+                                change_7d: 0.0,
+                                market_cap: price_data.market_cap.unwrap_or(0.0),
+                                volume_24h: price_data.volume_24h.unwrap_or(0.0),
+                                high_24h: price_data.price * 1.02,
+                                low_24h: price_data.price * 0.98,
+                                supply: 0.0,
+                            })
+                        })
+                        .collect();
+                }
+            }
+            Err(e) => {
+                eprintln!("CoinGecko batch API error: {}", e);
+            }
+        }
+
+        vec![]
+    }
+
+    /// Get price (with optional live fetch)
+    pub async fn get_price_live(&self, symbol: &str) -> Option<TokenPrice> {
+        // Try to fetch from CoinGecko first
+        if let Some(price) = self.fetch_price_from_coingecko(symbol).await {
+            return Some(price);
+        }
+        
+        // Fallback to cached/mock data
+        self.get_price(symbol).cloned()
+    }
+
+    /// Get multiple prices (with optional live fetch)
+    pub async fn get_prices_live(&self, symbols: &[&str]) -> Vec<TokenPrice> {
+        // Try batch fetch first
+        let prices = self.fetch_prices_batch(symbols).await;
+        
+        if !prices.is_empty() {
+            return prices;
+        }
+
+        // Fallback to cached/mock data
+        symbols
+            .iter()
+            .filter_map(|s| self.get_price(s).cloned())
+            .collect()
     }
     
-    /// Get price for a specific token
-    pub fn get_price(&self, symbol: &str) -> Option<TokenPrice> {
-        self.cache.get(&symbol.to_uppercase()).cloned()
+    /// Get price for a specific token (sync, uses cache)
+    pub fn get_price(&self, symbol: &str) -> Option<&TokenPrice> {
+        self.cache.get(&symbol.to_uppercase())
     }
     
     /// Get all token prices

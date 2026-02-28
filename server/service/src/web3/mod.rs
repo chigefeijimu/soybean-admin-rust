@@ -7,6 +7,8 @@ pub mod alloy_provider_v2;
 pub mod erc20;
 pub mod contract_call_impl;
 pub mod market_data;
+pub mod receipt_parser;
+pub mod transaction_decoder;
 
 use async_trait::async_trait;
 use chrono::Local;
@@ -603,9 +605,12 @@ impl TContractService for Web3ContractService {
 }
 
 // ============ Transaction Service ============
+pub use receipt_parser::{ParsedReceipt, TransactionReceipt};
+
 #[async_trait]
 pub trait TTransactionService {
     async fn list_transactions(&self, user_id: Option<String>) -> Result<Vec<TransactionInfo>, ServiceError>;
+    async fn parse_receipt(&self, receipt: TransactionReceipt) -> Result<ParsedReceipt, ServiceError>;
 }
 
 #[derive(Clone)]
@@ -638,6 +643,10 @@ impl TTransactionService for Web3TransactionService {
             error_message: t.error_message,
             created_at: t.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
         }).collect())
+    }
+
+    async fn parse_receipt(&self, receipt: TransactionReceipt) -> Result<ParsedReceipt, ServiceError> {
+        Ok(receipt_parser::parse_receipt(receipt))
     }
 }
 
@@ -673,6 +682,7 @@ impl TMarketDataService for Web3MarketDataService {
     async fn get_token_price(&self, symbol: &str) -> Result<TokenPrice, ServiceError> {
         MARKET_DATA_SERVICE
             .get_price(symbol)
+            .cloned()
             .ok_or_else(|| ServiceError::new("Token not found"))
     }
 

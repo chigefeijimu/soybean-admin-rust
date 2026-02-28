@@ -94,6 +94,12 @@ impl Web3Router {
                 "Web3TransactionApi",
                 "List transactions",
             ),
+            RouteInfo::new(
+                &format!("{}/transaction/parse-receipt", base_path),
+                Method::POST,
+                "Web3TransactionApi",
+                "Parse transaction receipt and extract events",
+            ),
         ];
 
         // Market data routes
@@ -185,6 +191,7 @@ impl Web3Router {
             .route("/contract/token-balances", post(Web3ContractApi::get_token_balances))
             // Transaction routes
             .route("/transaction/list", get(Web3TransactionApi::list_transactions))
+            .route("/transaction/parse-receipt", post(Web3TransactionApi::parse_receipt))
             // Market data routes
             .route("/market/price/{symbol}", get(Web3MarketDataApi::get_token_price))
             .route("/market/prices", get(Web3MarketDataApi::get_all_prices))

@@ -9,7 +9,7 @@ use server_service::web3::{
     TContractService, TTransactionService, TWalletService, TMarketDataService,
     WalletBalanceInput, WalletListInput, WalletVerifyInput,
     Web3ContractService, Web3TransactionService, Web3WalletService,
-    Web3MarketDataService, TokenBalanceInput,
+    Web3MarketDataService, TokenBalanceInput, TransactionReceipt,
 };
 
 pub struct Web3Api;
@@ -275,6 +275,27 @@ impl Web3TransactionApi {
             Ok(list) => Ok(Json(serde_json::json!({
                 "code": 200,
                 "data": list,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Parse transaction receipt and extract events
+    pub async fn parse_receipt(
+        Extension(service): Extension<Arc<Web3TransactionService>>,
+        Json(receipt): Json<TransactionReceipt>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.parse_receipt(receipt).await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
                 "msg": "success",
                 "success": true
             }))),

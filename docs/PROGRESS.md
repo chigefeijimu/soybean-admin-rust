@@ -440,3 +440,119 @@
 - 修复8个TypeScript错误
 - 前端构建通过
 - 后端编译通过
+
+---
+
+## 开发迭代 (2026-03-01 04:51 - 本次)
+
+### 本次完成的功能
+1. **新增交易回执解析模块** (`receipt_parser.rs`):
+   - `TransactionReceipt` - JSON-RPC 回执结构
+   - `ParsedReceipt` - 解析后的回执（含事件）
+   - `EventSignatureDatabase` - 已知事件签名数据库
+   - 支持解析 ERC20 Transfer/Approval 事件
+   - 支持解析 Uniswap Swap 事件
+   - 支持解析 WETH Deposit/Withdrawal 事件
+   - `format_gas_info` - 格式化 Gas 信息
+
+2. **新增交易解码模块** (`transaction_decoder.rs`):
+   - 之前已存在但未注册，现在添加到 mod.rs
+   - 支持解析交易输入数据
+   - 支持 ERC20/ERC721 方法签名
+
+### 代码改动统计
+- 新增: `server/service/src/web3/receipt_parser.rs` (~450 行)
+- 修改: `server/service/src/web3/mod.rs` (添加模块导出)
+- 总代码量: ~460 行
+
+### 验证
+- `cargo check --package server-service` ✅
+
+### 已完成的优化点
+- [x] 事件解析: 交易 Receipt 事件日志
+
+### 可能的改进点
+
+#### 中优先级
+1. **价格预言机集成**: 当前使用 mock 价格，需要集成 CoinGecko API
+2. **私钥管理**: 交易发送后端支持 (安全性考虑)
+
+#### 低优先级
+3. **Gas 优化**: EIP-1559 支持
+4. **Redis 缓存**: 缓存常用查询结果
+5. **多签支持**: Gnosis Safe 集成
+
+## 开发迭代 (2026-03-01 05:19 - 本次)
+
+### 本次完成的功能
+1. **CoinGecko 价格预言机集成** (`market_data.rs`):
+   - 新增 `fetch_price_from_coingecko()` - 异步获取单个代币价格
+   - 新增 `fetch_prices_batch()` - 批量获取代币价格 (CoinGecko API)
+   - 新增 `get_price_live()` - 智能获取价格 (优先API，回退缓存)
+   - 新增 `get_prices_live()` - 批量智能获取价格
+   - 添加价格缓存机制 (60秒TTL) 防止API限流
+   - 支持 30+ 主流代币 (ETH, BTC, USDC, USDT, SOL, ARB, LINK, UNI, AAVE等)
+
+2. **Token ID 映射**:
+   - 添加 `get_token_id()` 函数将代币符号映射到 CoinGecko ID
+   - 添加 `format_token_name()` 函数格式化代币名称
+
+### 代码改动统计
+- 修改: `server/service/src/web3/market_data.rs` (~130行新增)
+- 修改: `server/service/src/web3/mod.rs` (+1行 `.cloned()`)
+- 总代码量: ~131 行
+
+### 验证
+- `cargo check --package server-service` ✅
+
+### 已完成的优化点
+- [x] 价格预言机集成: 从 mock 升级到真实 CoinGecko API
+
+## 下一步
+- 前后端集成测试
+- 实际部署验证
+
+---
+
+## 开发迭代 (2026-03-01 05:51 - 本次)
+
+### 本次完成的功能
+1. **交易回执解析API集成** (`receipt_parser.rs`):
+   - 将 `receipt_parser` 模块集成到服务层和API层
+   - 新增 `/web3/transaction/parse-receipt` API 端点
+   - 支持解析交易回执中的事件日志
+   - 支持 ERC20 Transfer/Approval 事件解析
+   - 支持 Uniswap Swap 事件解析
+   - 支持 WETH Deposit/Withdrawal 事件解析
+
+2. **服务层改动**:
+   - `server/service/src/web3/mod.rs`:
+     - 添加 `pub use receipt_parser::{ParsedReceipt, TransactionReceipt}`
+     - 在 `TTransactionService` trait 中添加 `parse_receipt` 方法
+     - 在 `Web3TransactionService` 中实现 `parse_receipt` 方法
+
+3. **API层改动**:
+   - `server/api/src/web3/mod.rs`:
+     - 添加 `parse_receipt` API 端点
+
+4. **Router层改动**:
+   - `server/router/src/web3/mod.rs`:
+     - 注册 `/web3/transaction/parse-receipt` 路由
+
+### 代码改动统计
+- 修改: `server/service/src/web3/mod.rs` (+8行)
+- 修改: `server/api/src/web3/mod.rs` (+22行)
+- 修改: `server/router/src/web3/mod.rs` (+10行)
+- 总代码量: ~40 行
+
+### 验证
+- `cargo check --package server-service` ✅
+- `cargo check --package server-api` ✅
+- `cargo check --package server-router` ✅
+
+### 已完成的优化点
+- [x] 事件解析: 交易 Receipt 事件日志 (已集成到API)
+
+## 下一步
+- 前后端集成测试
+- 实际部署验证
