@@ -15,6 +15,14 @@ pub enum UserError {
     InvalidUserStatus,
     #[error("User account is disabled")]
     UserDisabled,
+    #[error("Too many login attempts, please try again later")]
+    LoginTooManyAttempts,
+    #[error("Account is locked")]
+    AccountLocked,
+    #[error("IP address is blocked")]
+    IpBlocked,
+    #[error("Login not allowed at this time")]
+    LoginNotAllowed,
 }
 
 impl ApiError for UserError {
@@ -26,6 +34,10 @@ impl ApiError for UserError {
             UserError::UsernameAlreadyExists => 1004,
             UserError::InvalidUserStatus => 1005,
             UserError::UserDisabled => 1006,
+            UserError::LoginTooManyAttempts => 1007,
+            UserError::AccountLocked => 1008,
+            UserError::IpBlocked => 1009,
+            UserError::LoginNotAllowed => 1010,
         }
     }
 

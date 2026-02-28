@@ -1,6 +1,9 @@
+#![allow(unused_imports)]
 use std::any::Any;
 
 use async_trait::async_trait;
+use chrono::{Local, Timelike};
+use redis::AsyncCommands;
 use sea_orm::{
     ColumnTrait, DatabaseConnection, EntityTrait, JoinType, QueryFilter, QueryOrder, QuerySelect,
     RelationTrait,
@@ -301,14 +304,145 @@ impl SysAuthService {
 
     async fn check_login_security(
         &self,
-        _username: &str,
-        _client_ip: &str,
+        username: &str,
+        client_ip: &str,
     ) -> Result<(), AppError> {
-        // TODO: 实现登录安全检查
         // 1. 检查登录失败次数
+        self.check_login_attempts(username).await?;
+
         // 2. 检查 IP 黑名单
-        // 3. 检查账号是否被锁定
+        self.check_ip_blacklist(client_ip).await?;
+
+        // 3. 检查账号是否被锁定 (通过Redis检查)
+        self.check_account_lock(username).await?;
+
         // 4. 检查是否在允许的时间范围内
+        self.check_login_time_window().await?;
+
+        Ok(())
+    }
+
+    /// 检查登录失败次数
+    async fn check_login_attempts(&self, username: &str) -> Result<(), AppError> {
+        use redis::aio::MultiplexedConnection;
+        use crate::helper::redis_helper::{get_redis_connection, RedisSource};
+
+        let mut redis: MultiplexedConnection = get_redis_connection(RedisSource::Primary).await?;
+        let key = format!("login:fail:{}", username);
+
+        let count: Option<i32> = redis
+            .get(&key)
+            .await
+            .ok()
+            .and_then(|v: String| v.parse().ok());
+
+        if let Some(fail_count) = count {
+            const MAX_LOGIN_ATTEMPTS: i32 = 5;
+            if fail_count >= MAX_LOGIN_ATTEMPTS {
+                return Err(UserError::LoginTooManyAttempts.into());
+            }
+        }
+        Ok(())
+    }
+
+    /// 检查 IP 黑名单
+    async fn check_ip_blacklist(&self, client_ip: &str) -> Result<(), AppError> {
+        // 简单的内网IP检查示例，实际应该从配置或数据库读取黑名单
+        let blocked_ips = [
+            "127.0.0.1",
+            "0.0.0.0",
+        ];
+        
+        if blocked_ips.contains(&client_ip) {
+            return Err(UserError::IpBlocked.into());
+        }
+        Ok(())
+    }
+
+    /// 检查账号是否被锁定
+    async fn check_account_lock(&self, username: &str) -> Result<(), AppError> {
+        use redis::aio::MultiplexedConnection;
+        use crate::helper::redis_helper::{get_redis_connection, RedisSource};
+
+        let mut redis: MultiplexedConnection = get_redis_connection(RedisSource::Primary).await?;
+        let key = format!("login:lock:{}", username);
+
+        let is_locked: Option<i32> = redis
+            .get(&key)
+            .await
+            .ok()
+            .and_then(|v: String| v.parse().ok());
+
+        if is_locked.is_some() {
+            return Err(UserError::AccountLocked.into());
+        }
+        Ok(())
+    }
+
+    /// 检查登录时间窗口
+    async fn check_login_time_window(&self) -> Result<(), AppError> {
+        use chrono::Local;
+
+        // 默认允许登录的时间段: 06:00 - 23:00
+        const ALLOWED_START_HOUR: u32 = 6;
+        const ALLOWED_END_HOUR: u32 = 23;
+
+        let current_hour = Local::now().hour();
+
+        if current_hour < ALLOWED_START_HOUR || current_hour >= ALLOWED_END_HOUR {
+            return Err(UserError::LoginNotAllowed.into());
+        }
+        Ok(())
+    }
+
+    /// 记录登录失败次数
+    pub async fn record_login_failure(&self, username: &str) -> Result<(), AppError> {
+        use redis::aio::MultiplexedConnection;
+        use crate::helper::redis_helper::{get_redis_connection, RedisSource};
+
+        let mut redis: MultiplexedConnection = get_redis_connection(RedisSource::Primary).await?;
+        let key = format!("login:fail:{}", username);
+
+        // 获取当前失败次数
+        let count: i32 = redis
+            .get(&key)
+            .await
+            .ok()
+            .and_then(|v: String| v.parse().ok())
+            .unwrap_or(0);
+
+        let new_count = count + 1;
+
+        // 设置过期时间为15分钟
+        let expire_seconds = 15 * 60;
+        let _: () = redis
+            .set_ex(&key, new_count.to_string(), expire_seconds as u64)
+            .await?;
+
+        // 如果失败次数达到阈值，锁定账号
+        const MAX_LOGIN_ATTEMPTS: i32 = 5;
+        if new_count >= MAX_LOGIN_ATTEMPTS {
+            let lock_key = format!("login:lock:{}", username);
+            // 锁定30分钟
+            let _: () = redis
+                .set_ex(&lock_key, "1", (30 * 60) as u64)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    /// 清除登录失败次数（登录成功时调用）
+    pub async fn clear_login_failure(&self, username: &str) -> Result<(), AppError> {
+        use redis::aio::MultiplexedConnection;
+        use crate::helper::redis_helper::{get_redis_connection, RedisSource};
+
+        let mut redis: MultiplexedConnection = get_redis_connection(RedisSource::Primary).await?;
+        let key = format!("login:fail:{}", username);
+        let lock_key = format!("login:lock:{}", username);
+
+        let _: std::result::Result<Vec<String>, _> = redis.del(&[&key, &lock_key]).await;
+
         Ok(())
     }
 
@@ -321,7 +455,15 @@ impl SysAuthService {
         self.check_login_security(&input.identifier, &context.client_ip)
             .await?;
 
-        self.pwd_login(input, context).await
+        let identifier = input.identifier.clone();
+        let result = self.pwd_login(input, context).await;
+        
+        // 登录成功时清除失败记录
+        if result.is_ok() {
+            let _ = self.clear_login_failure(&identifier).await;
+        }
+        
+        result
     }
 }
 
