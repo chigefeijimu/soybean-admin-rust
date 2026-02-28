@@ -115,12 +115,57 @@ where
                 let end_time = Local::now().naive_local();
                 let duration = (end_time - start_time).num_milliseconds() as i32;
 
+/// 从URI路径中提取模块名
+/// 例如: /api/admin/sys_user/list -> sys_user
+fn extract_module_name(uri: &str) -> String {
+    // 移除查询参数
+    let path = uri.split('?').next().unwrap_or(uri);
+    
+    // 分割路径并查找有意义的模块名
+    // 常见模式: /api/admin/{module_name}/... 或 /api/{module_name}/...
+    let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+    
+    // 尝试找到模块名 (通常在 admin, api, web3 等之后)
+    let module_keywords = ["admin", "api", "web3", "system", "auth", "user", "role", "menu", "domain"];
+    
+    for (i, segment) in segments.iter().enumerate() {
+        if module_keywords.contains(segment) && i + 1 < segments.len() {
+            let next = segments[i + 1];
+            // 跳过纯数字ID或特殊路径
+            if !next.chars().all(|c| c.is_ascii_digit()) && next != "list" && next != "detail" && next != "create" && next != "edit" && next != "delete" {
+                return next.to_string();
+            }
+        }
+    }
+    
+    // 如果找不到，返回最后有意义的段
+    segments.last().map(|s| s.to_string()).unwrap_or_else(|| "unknown".to_string())
+}
+
+/// 根据HTTP方法和路径生成描述
+fn generate_description(method: &str, uri: &str) -> String {
+    let path = uri.split('?').next().unwrap_or(uri);
+    let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+    let last_segment = segments.last().unwrap_or(&"");
+    
+    let action = match method.to_uppercase().as_str() {
+        "GET" if *last_segment == "list" || last_segment.contains("List") => "查询列表",
+        "GET" => "查询详情",
+        "POST" => "创建",
+        "PUT" | "PATCH" => "更新",
+        "DELETE" => "删除",
+        _ => "操作",
+    };
+    
+    format!("{} {}", action, extract_module_name(uri))
+}
+
                 let context = OperationLogContext {
                     user_id,
                     username,
                     domain,
-                    module_name: "TODO".to_string(),
-                    description: "TODO".to_string(),
+                    module_name: extract_module_name(&uri),
+                    description: generate_description(&method, &uri),
                     request_id,
                     method,
                     url: uri,
