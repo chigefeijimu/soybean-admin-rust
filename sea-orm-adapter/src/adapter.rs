@@ -222,7 +222,8 @@ mod tests {
         let db_url = {
             #[cfg(feature = "postgres")]
             {
-                "postgresql://soybean:soybean@123.@localhost:35432/soybean-admin-rust-backend"
+                std::env::var("DATABASE_URL")
+                    .unwrap_or_else(|_| "postgresql://soybean:soybean@localhost:5432/soybean_admin".to_string())
             }
 
             #[cfg(feature = "mysql")]

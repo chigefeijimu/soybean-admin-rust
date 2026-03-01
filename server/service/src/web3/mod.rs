@@ -20,6 +20,7 @@ pub mod swap_service;
 pub mod kline;
 pub mod indicators;
 pub mod price_fetcher;
+pub mod order;
 
 use async_trait::async_trait;
 use chrono::Local;
