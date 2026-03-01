@@ -409,6 +409,73 @@ impl Web3Api {
             }))),
         }
     }
+
+    /// Get real price from CoinGecko API
+    pub async fn get_real_price(
+        Path(symbol): Path<String>,
+    ) -> Json<serde_json::Value> {
+        let service = PriceService::new();
+        
+        match service.get_price(&symbol).await {
+            Ok(data) => Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))
+        }
+    }
+
+    /// Get top coins by market cap
+    pub async fn get_top_coins(
+        Query(params): Query<TopCoinsParams>,
+    ) -> Json<serde_json::Value> {
+        let service = PriceService::new();
+        let limit = params.limit.unwrap_or(20);
+        
+        match service.get_top_coins(limit).await {
+            Ok(data) => Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))
+        }
+    }
+
+    /// Search coins
+    pub async fn search_coins(
+        Query(params): Query<SearchCoinsParams>,
+    ) -> Json<serde_json::Value> {
+        let service = PriceService::new();
+        
+        match service.search_coins(&params.query).await {
+            Ok(data) => Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))
+        }
+    }
 }
 
 // ============ Contract API ============
@@ -930,73 +997,6 @@ impl Web3MarketDataApi {
             "msg": "success",
             "success": true
         }))
-    }
-
-    /// Get real price from CoinGecko API
-    pub async fn get_real_price(
-        Path(symbol): Path<String>,
-    ) -> Json<serde_json::Value> {
-        let service = PriceService::new();
-        
-        match service.get_price(&symbol).await {
-            Ok(data) => Json(serde_json::json!({
-                "code": 200,
-                "data": data,
-                "msg": "success",
-                "success": true
-            })),
-            Err(e) => Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))
-        }
-    }
-
-    /// Get top coins by market cap
-    pub async fn get_top_coins(
-        Query(params): Query<TopCoinsParams>,
-    ) -> Json<serde_json::Value> {
-        let service = PriceService::new();
-        let limit = params.limit.unwrap_or(20);
-        
-        match service.get_top_coins(limit).await {
-            Ok(data) => Json(serde_json::json!({
-                "code": 200,
-                "data": data,
-                "msg": "success",
-                "success": true
-            })),
-            Err(e) => Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))
-        }
-    }
-
-    /// Search coins
-    pub async fn search_coins(
-        Query(params): Query<SearchCoinsParams>,
-    ) -> Json<serde_json::Value> {
-        let service = PriceService::new();
-        
-        match service.search_coins(&params.query).await {
-            Ok(data) => Json(serde_json::json!({
-                "code": 200,
-                "data": data,
-                "msg": "success",
-                "success": true
-            })),
-            Err(e) => Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))
-        }
     }
 }
 
