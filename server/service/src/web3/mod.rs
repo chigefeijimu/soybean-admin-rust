@@ -12,6 +12,11 @@ pub mod transaction_decoder;
 pub mod key_manager;
 pub mod block_scanner;
 pub mod nft;
+pub mod defi_portfolio;
+pub mod ens_service;
+pub mod ipfs_service;
+pub mod price_alert;
+pub mod swap_service;
 
 use async_trait::async_trait;
 use chrono::Local;
