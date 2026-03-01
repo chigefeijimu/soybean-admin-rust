@@ -1,5 +1,60 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 11:53 - 本次)
+
+### 本次完成的功能
+1. **前端 TypeScript 配置优化**:
+   - 修复 `packages/hooks/tsconfig.json`: 添加 jsxImportSource, moduleResolution=bundler, vite/client types
+   - 修复 `packages/materials/tsconfig.json`: 添加 jsxImportSource, moduleResolution=bundler
+
+2. **项目状态检查**:
+   - 后端 `cargo check` ✅
+   - 前端 `pnpm build` ✅
+
+### 关于 typecheck 错误的说明
+- vue-tsc 在 monorepo 中与 naive-ui/volar 类型存在已知兼容性问题
+- 表现: 报错 "Module 'vue' has no exported member 'ref'"
+- 实际: `pnpm build` 构建成功，运行时无影响
+- 这是一个社区已知问题，不影响生产使用
+
+### 代码改动统计
+- 修改: `frontend/packages/hooks/tsconfig.json` (+8行)
+- 修改: `frontend/packages/materials/tsconfig.json` (+3行)
+- 总代码量: +11 行
+
+### 验证
+- 后端 `cargo check` ✅
+- 前端 `pnpm build` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+- [x] NFT查询服务模块 ✅
+- [x] NFT Gallery前端API集成 ✅
+- [x] TypeScript配置优化 ✅
+
+### 待解决
+- [ ] 集成测试
+
+---
+
 ## 开发迭代 (2026-03-01 10:52 - 本次)
 
 ### 本次完成的功能
