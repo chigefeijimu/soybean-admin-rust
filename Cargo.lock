@@ -6903,6 +6903,7 @@ dependencies = [
  "axum-casbin",
  "axum-extra",
  "headers",
+ "serde",
  "serde_json",
  "server-core",
  "server-service",

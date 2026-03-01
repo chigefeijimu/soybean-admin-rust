@@ -216,13 +216,48 @@ impl Web3Router {
             ),
         ];
 
+        // NFT routes
+        let nft_routes = vec![
+            RouteInfo::new(
+                &format!("{}/nft/:contract/:tokenId/owner", base_path),
+                Method::GET,
+                "Web3Api",
+                "Get NFT owner",
+            ),
+            RouteInfo::new(
+                &format!("{}/nft/:contract/:tokenId/token-uri", base_path),
+                Method::GET,
+                "Web3Api",
+                "Get NFT token URI",
+            ),
+            RouteInfo::new(
+                &format!("{}/nft/metadata/:tokenUri", base_path),
+                Method::GET,
+                "Web3Api",
+                "Get NFT metadata",
+            ),
+            RouteInfo::new(
+                &format!("{}/nft/:contract/owners", base_path),
+                Method::POST,
+                "Web3Api",
+                "Get batch NFT owners",
+            ),
+            RouteInfo::new(
+                &format!("{}/nft/:contract/details", base_path),
+                Method::POST,
+                "Web3Api",
+                "Get multiple NFT details",
+            ),
+        ];
+
         // Add all routes
         for route in wallet_routes.into_iter()
             .chain(contract_routes.into_iter())
             .chain(transaction_routes.into_iter())
             .chain(market_data_routes.into_iter())
             .chain(key_routes.into_iter()) 
-            .chain(block_scanner_routes.into_iter()) 
+            .chain(block_scanner_routes.into_iter())
+            .chain(nft_routes.into_iter())
         {
             add_route(route).await;
         }
@@ -265,12 +300,12 @@ impl Web3Router {
             .route("/block/latest", get(Web3Api::get_latest_block))
             .route("/transaction/receipt/{txHash}", get(Web3Api::get_transaction_receipt))
             .route("/scan/{from}/{to}", get(Web3Api::scan_blocks))
-            // NFT routes - TODO: enable after fixing router visibility
-            // .route("/nft/{contract}/{tokenId}/owner", get(Web3Api::get_nft_owner))
-            // .route("/nft/{contract}/{tokenId}/token-uri", get(Web3Api::get_nft_token_uri))
-            // .route("/nft/metadata/{tokenUri}", get(Web3Api::get_nft_metadata))
-            // .route("/nft/{contract}/owners", post(Web3Api::get_nft_owners_batch))
-            // .route("/nft/{contract}/details", post(Web3Api::get_nfts))
+            // NFT routes
+            .route("/nft/{contract}/{tokenId}/owner", get(Web3Api::get_nft_owner))
+            .route("/nft/{contract}/{tokenId}/token-uri", get(Web3Api::get_nft_token_uri))
+            .route("/nft/metadata/{tokenUri}", get(Web3Api::get_nft_metadata))
+            .route("/nft/{contract}/owners", post(Web3Api::get_nft_owners_batch))
+            .route("/nft/{contract}/details", post(Web3Api::get_nfts))
             ;
 
         router

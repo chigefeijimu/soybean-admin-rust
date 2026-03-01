@@ -15,6 +15,22 @@ use server_service::web3::{
 pub use server_service::web3::Web3KeyManagerService;
 pub use server_service::web3::nft::{NFTInfo, NFTService};
 
+use serde::Deserialize;
+
+/// Input for batch NFT owners query
+#[derive(Debug, Deserialize)]
+pub struct NFTBatchOwnersInput {
+    pub token_ids: Vec<String>,
+    pub chain_id: Option<u64>,
+}
+
+/// Input for NFT details query
+#[derive(Debug, Deserialize)]
+pub struct NFTDetailsInput {
+    pub token_ids: Vec<String>,
+    pub chain_id: Option<u64>,
+}
+
 pub struct Web3Api;
 
 // ============ Wallet API ============
@@ -262,6 +278,124 @@ impl Web3Api {
             Ok(result) => Ok(Json(serde_json::json!({
                 "code": 200,
                 "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get NFT owner (ERC721 ownerOf)
+    pub async fn get_nft_owner(
+        Path((contract, token_id)): Path<(String, String)>,
+        Query(params): Query<std::collections::HashMap<String, String>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        let chain_id: u64 = params
+            .get("chainId")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1); // Default to Ethereum mainnet
+        
+        match NFTService::owner_of(&contract, &token_id, chain_id).await {
+            Ok(owner) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": { "owner": owner, "token_id": token_id, "contract": contract },
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get NFT tokenURI
+    pub async fn get_nft_token_uri(
+        Path((contract, token_id)): Path<(String, String)>,
+        Query(params): Query<std::collections::HashMap<String, String>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        let chain_id: u64 = params
+            .get("chainId")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1);
+        
+        match NFTService::token_uri(&contract, &token_id, chain_id).await {
+            Ok(token_uri) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": { "token_uri": token_uri, "token_id": token_id, "contract": contract },
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Fetch NFT metadata from tokenURI
+    pub async fn get_nft_metadata(
+        Path(token_uri): Path<String>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match NFTService::fetch_metadata(&token_uri).await {
+            Ok(metadata) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": metadata,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get batch NFT owners
+    pub async fn get_nft_owners_batch(
+        Path(contract): Path<String>,
+        Json(input): Json<NFTBatchOwnersInput>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        let chain_id = input.chain_id.unwrap_or(1);
+        
+        match NFTService::get_owners_batch(&contract, &input.token_ids, chain_id).await {
+            Ok(owners) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": owners,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get multiple NFT details (owner + metadata)
+    pub async fn get_nfts(
+        Path(contract): Path<String>,
+        Json(input): Json<NFTDetailsInput>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        let chain_id = input.chain_id.unwrap_or(1);
+        
+        match NFTService::get_nfts(&contract, &input.token_ids, chain_id).await {
+            Ok(nfts) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": nfts,
                 "msg": "success",
                 "success": true
             }))),
@@ -711,131 +845,4 @@ impl Web3MarketDataApi {
             }))),
         }
     }
-
-    /// Get NFT owner (ERC721 ownerOf)
-    pub async fn get_nft_owner(
-        Path((contract, token_id)): Path<(String, String)>,
-        Query(params): Query<std::collections::HashMap<String, String>>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        let chain_id: u64 = params
-            .get("chainId")
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(1); // Default to Ethereum mainnet
-        
-        match NFTService::owner_of(&contract, &token_id, chain_id).await {
-            Ok(owner) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": { "owner": owner, "token_id": token_id, "contract": contract },
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-
-    /// Get NFT tokenURI
-    pub async fn get_nft_token_uri(
-        Path((contract, token_id)): Path<(String, String)>,
-        Query(params): Query<std::collections::HashMap<String, String>>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        let chain_id: u64 = params
-            .get("chainId")
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(1);
-        
-        match NFTService::token_uri(&contract, &token_id, chain_id).await {
-            Ok(token_uri) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": { "token_uri": token_uri, "token_id": token_id, "contract": contract },
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-
-    /// Fetch NFT metadata from tokenURI
-    pub async fn get_nft_metadata(
-        Path(token_uri): Path<String>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        match NFTService::fetch_metadata(&token_uri).await {
-            Ok(metadata) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": metadata,
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-
-    /// Get batch NFT owners
-    pub async fn get_nft_owners_batch(
-        Path(contract): Path<String>,
-        Json(token_ids): Json<Vec<String>>,
-        Query(params): Query<std::collections::HashMap<String, String>>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        let chain_id: u64 = params
-            .get("chainId")
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(1);
-        
-        match NFTService::get_owners_batch(&contract, &token_ids, chain_id).await {
-            Ok(owners) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": owners,
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-
-    /// Get multiple NFT details (owner + metadata)
-    pub async fn get_nfts(
-        Path(contract): Path<String>,
-        Json(token_ids): Json<Vec<String>>,
-        Query(params): Query<std::collections::HashMap<String, String>>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        let chain_id: u64 = params
-            .get("chainId")
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(1);
-        
-        match NFTService::get_nfts(&contract, &token_ids, chain_id).await {
-            Ok(nfts) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": nfts,
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-
 }
