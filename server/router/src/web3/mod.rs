@@ -426,5 +426,12 @@ impl Web3Router {
             .route("/address-book/{id}", put(Web3Api::update_address_book_entry))
             .route("/address-book/{id}", delete(Web3Api::delete_address_book_entry))
             .route("/address-book/{id}/favorite", post(Web3Api::toggle_address_favorite))
+            // Gas Analytics routes
+            .route("/gas/analytics", get(Web3Api::get_gas_analytics))
+            .route("/gas/summary", get(Web3Api::get_gas_summary))
+            .route("/gas/by-hour", get(Web3Api::get_gas_by_hour))
+            .route("/gas/by-day-of-week", get(Web3Api::get_gas_by_day_of_week))
+            .route("/gas/suggestions", get(Web3Api::get_gas_suggestions))
+            .route("/gas/compare", get(Web3Api::compare_gas_periods))
     }
 }

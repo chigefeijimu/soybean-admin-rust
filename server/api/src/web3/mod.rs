@@ -31,6 +31,14 @@ pub use server_service::web3::address_book::{
     AddressBookService, CreateAddressInput, UpdateAddressInput, AddressBookEntry,
     TAddressBookService,
 };
+pub use server_service::web3::gas_analytics::{
+    GasAnalyticsService, TGasAnalyticsService,
+    GasAnalyticsInput, GasAnalyticsEntry, GasAnalyticsSummary,
+    GasByHourInput, GasHourlyAnalytics,
+    GasByDayOfWeekInput, GasDayOfWeekAnalytics,
+    GasComparisonInput, GasComparisonResult,
+    GasOptimizationSuggestion,
+};
 
 use serde::Deserialize;
 use std::sync::Mutex;
@@ -1934,4 +1942,134 @@ impl Web3Api {
 #[derive(Debug, Deserialize)]
 pub struct AddressSearchParams {
     q: String,
+}
+
+// ============ Gas Analytics API ============
+
+impl Web3Api {
+    /// Get gas analytics for an address
+    pub async fn get_gas_analytics(
+        Query(params): Query<GasAnalyticsInput>,
+        Extension(service): Extension<Arc<GasAnalyticsService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_gas_analytics(params).await {
+            Ok(data) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get gas analytics summary
+    pub async fn get_gas_summary(
+        Query(params): Query<GasAnalyticsInput>,
+        Extension(service): Extension<Arc<GasAnalyticsService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_gas_summary(params).await {
+            Ok(data) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get gas analytics by hour
+    pub async fn get_gas_by_hour(
+        Query(params): Query<GasByHourInput>,
+        Extension(service): Extension<Arc<GasAnalyticsService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_gas_by_hour(params).await {
+            Ok(data) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get gas analytics by day of week
+    pub async fn get_gas_by_day_of_week(
+        Query(params): Query<GasByDayOfWeekInput>,
+        Extension(service): Extension<Arc<GasAnalyticsService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_gas_by_day_of_week(params).await {
+            Ok(data) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Get gas optimization suggestions
+    pub async fn get_gas_suggestions(
+        Query(params): Query<GasAnalyticsInput>,
+        Extension(service): Extension<Arc<GasAnalyticsService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.get_gas_suggestions(params).await {
+            Ok(data) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Compare gas usage between periods
+    pub async fn compare_gas_periods(
+        Query(params): Query<GasComparisonInput>,
+        Extension(service): Extension<Arc<GasAnalyticsService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.compare_gas_periods(params).await {
+            Ok(data) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
 }

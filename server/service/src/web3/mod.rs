@@ -8,6 +8,8 @@ pub mod erc20;
 pub mod contract_call_impl;
 pub mod market_data;
 pub mod receipt_parser;
+
+pub use alloy_provider::Web3Provider;
 pub mod transaction_decoder;
 pub mod key_manager;
 pub mod block_scanner;
@@ -24,6 +26,7 @@ pub mod order;
 pub mod bridge;
 pub mod batch_transfer;
 pub mod address_book;
+pub mod gas_analytics;
 
 use async_trait::async_trait;
 use chrono::Local;
@@ -703,6 +706,14 @@ pub use block_scanner::{BlockInfo, ScanResult, ScanFilter, TransactionAnalysis};
 pub use kline::{Candlestick, TimePeriod, TradingPair, KLineService};
 pub use indicators::{MovingAverage, RsiData, MacdData, BollingerBands, VwapData, AtrData, TechnicalAnalysis, IndicatorService};
 pub use price_fetcher::{PriceService, RealPriceData, CoinSearchResult};
+pub use gas_analytics::{
+    GasAnalyticsService, TGasAnalyticsService,
+    GasAnalyticsInput, GasAnalyticsEntry, GasAnalyticsSummary,
+    GasByHourInput, GasHourlyAnalytics,
+    GasByDayOfWeekInput, GasDayOfWeekAnalytics,
+    GasComparisonInput, GasComparisonResult,
+    GasOptimizationSuggestion, GasComparison,
+};
 
 #[async_trait]
 pub trait TTransactionService {
