@@ -22,6 +22,7 @@ pub mod indicators;
 pub mod price_fetcher;
 pub mod order;
 pub mod bridge;
+pub mod batch_transfer;
 
 use async_trait::async_trait;
 use chrono::Local;
