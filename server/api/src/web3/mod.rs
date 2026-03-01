@@ -163,6 +163,115 @@ impl Web3Api {
             })),
         }
     }
+
+    // ============ Block Scanner API ============
+    
+    /// Get block by number
+    pub async fn get_block(
+        Path(block_number): Path<u64>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        use server_service::web3::block_scanner::BlockScanner;
+        
+        let scanner = BlockScanner::new(
+            "https://eth.llamarpc.com".to_string(),
+            100
+        );
+        
+        match scanner.get_block(block_number).await {
+            Ok(block) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": block,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+    
+    /// Get latest block number
+    pub async fn get_latest_block(
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        use server_service::web3::block_scanner::BlockScanner;
+        
+        let scanner = BlockScanner::new(
+            "https://eth.llamarpc.com".to_string(),
+            100
+        );
+        
+        match scanner.get_latest_block().await {
+            Ok(block_num) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": { "blockNumber": block_num },
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+    
+    /// Get transaction receipt by hash
+    pub async fn get_transaction_receipt(
+        Path(tx_hash): Path<String>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        use server_service::web3::block_scanner::BlockScanner;
+        
+        let scanner = BlockScanner::new(
+            "https://eth.llamarpc.com".to_string(),
+            100
+        );
+        
+        match scanner.get_receipt(&tx_hash).await {
+            Ok(receipt) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": receipt,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
+    
+    /// Scan blocks in range
+    pub async fn scan_blocks(
+        Path((from, to)): Path<(u64, u64)>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        use server_service::web3::block_scanner::BlockScanner;
+        
+        let scanner = BlockScanner::new(
+            "https://eth.llamarpc.com".to_string(),
+            100
+        );
+        
+        match scanner.scan_blocks(from, to).await {
+            Ok(result) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": result,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))),
+        }
+    }
 }
 
 // ============ Contract API ============
@@ -597,115 +706,6 @@ impl Web3MarketDataApi {
                 "code": 500,
                 "data": null,
                 "msg": e.message,
-                "success": false
-            }))),
-        }
-    }
-
-    // ============ Block Scanner API ============
-    
-    /// Get block by number
-    pub async fn get_block(
-        Path(block_number): Path<u64>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        use server_service::web3::block_scanner::BlockScanner;
-        
-        let scanner = BlockScanner::new(
-            "https://eth.llamarpc.com".to_string(),
-            100
-        );
-        
-        match scanner.get_block(block_number).await {
-            Ok(block) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": block,
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-    
-    /// Get latest block number
-    pub async fn get_latest_block(
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        use server_service::web3::block_scanner::BlockScanner;
-        
-        let scanner = BlockScanner::new(
-            "https://eth.llamarpc.com".to_string(),
-            100
-        );
-        
-        match scanner.get_latest_block().await {
-            Ok(block_num) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": { "blockNumber": block_num },
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-    
-    /// Get transaction receipt by hash
-    pub async fn get_transaction_receipt(
-        Path(tx_hash): Path<String>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        use server_service::web3::block_scanner::BlockScanner;
-        
-        let scanner = BlockScanner::new(
-            "https://eth.llamarpc.com".to_string(),
-            100
-        );
-        
-        match scanner.get_receipt(&tx_hash).await {
-            Ok(receipt) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": receipt,
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
-                "success": false
-            }))),
-        }
-    }
-    
-    /// Scan blocks in range
-    pub async fn scan_blocks(
-        Path((from, to)): Path<(u64, u64)>,
-    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
-        use server_service::web3::block_scanner::BlockScanner;
-        
-        let scanner = BlockScanner::new(
-            "https://eth.llamarpc.com".to_string(),
-            100
-        );
-        
-        match scanner.scan_blocks(from, to).await {
-            Ok(result) => Ok(Json(serde_json::json!({
-                "code": 200,
-                "data": result,
-                "msg": "success",
-                "success": true
-            }))),
-            Err(e) => Ok(Json(serde_json::json!({
-                "code": 500,
-                "data": null,
-                "msg": e,
                 "success": false
             }))),
         }

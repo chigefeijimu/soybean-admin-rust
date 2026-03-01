@@ -188,8 +188,7 @@ impl Web3Router {
             ),
         ];
 
-        // Block scanner routes (temporarily disabled - needs fix)
-        /*
+        // Block scanner routes
         let block_scanner_routes = vec![
             RouteInfo::new(
                 &format!("{}/block/:blockNumber", base_path),
@@ -216,7 +215,6 @@ impl Web3Router {
                 "Scan blocks in range",
             ),
         ];
-        */
 
         // Add all routes
         for route in wallet_routes.into_iter()
@@ -224,7 +222,7 @@ impl Web3Router {
             .chain(transaction_routes.into_iter())
             .chain(market_data_routes.into_iter())
             .chain(key_routes.into_iter()) 
-            //.chain(block_scanner_routes.into_iter()) 
+            .chain(block_scanner_routes.into_iter()) 
         {
             add_route(route).await;
         }
@@ -261,12 +259,12 @@ impl Web3Router {
             // Key manager routes
             .route("/key", post(Web3Api::create_key))
             .route("/key/list", get(Web3Api::list_keys))
-            .route("/key/{id}", delete(Web3Api::delete_key));
-            // Block scanner routes (disabled)
-            // .route("/block/{blockNumber}", get(Web3Api::get_block))
-            // .route("/block/latest", get(Web3Api::get_latest_block))
-            // .route("/transaction/receipt/{txHash}", get(Web3Api::get_transaction_receipt))
-            // .route("/scan/{from}/{to}", get(Web3Api::scan_blocks));
+            .route("/key/{id}", delete(Web3Api::delete_key))
+            // Block scanner routes
+            .route("/block/{blockNumber}", get(Web3Api::get_block))
+            .route("/block/latest", get(Web3Api::get_latest_block))
+            .route("/transaction/receipt/{txHash}", get(Web3Api::get_transaction_receipt))
+            .route("/scan/{from}/{to}", get(Web3Api::scan_blocks));
 
         router
     }
