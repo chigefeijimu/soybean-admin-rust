@@ -1130,7 +1130,7 @@ pub async fn create_order(
     }
 
     // Generate order ID
-    let order_id = format!("ord_{}", uuid::Uuid::new_v4().to_string().replace("-", "")[..16].to_string());
+    let order_id = format!("ord_{}", &uuid::Uuid::new_v4().to_string().replace("-", "")[..16]);
     
     // Calculate slippage if not provided
     let slippage_bps = input.slippage_bps.unwrap_or(50); // Default 0.5%
@@ -1152,7 +1152,7 @@ pub async fn create_order(
         time_in_force: input.time_in_force.clone().unwrap_or(TimeInForce::GTC),
         expire_at: input.expire_at.clone(),
         chain_id: input.chain_id.unwrap_or(1),
-        slippage_bps: slippage_bps,
+        slippage_bps,
         tx_hash: None,
         created_at: chrono::Utc::now().to_rfc3339(),
         updated_at: None,
