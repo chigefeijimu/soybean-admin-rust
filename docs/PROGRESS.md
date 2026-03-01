@@ -1,20 +1,27 @@
 # Web3 项目进度
 
-## 开发迭代 (2026-03-01 16:31 - 本次)
+## 开发迭代 (2026-03-01 17:05 - 本次)
 
-### 本次修复的BUG
-1. **Router编译错误 - 缺失API方法**:
-   - 问题: `cargo check --package server-router` 失败，报错 `no function or associated item named 'get_real_price' found for struct 'Web3Api'`
-   - 原因: `get_real_price`, `get_top_coins`, `search_coins` 三个函数定义在 `impl Web3Api` 代码块之外（文件末尾），导致路由无法访问
-   - 修复: 将这三个函数移动到 `impl Web3Api` 代码块内部（第414-482行），并删除文件末尾的重复定义
+### 本次完成的功能
+1. **新增 Swap API 端点**:
+   - 后端: 在 `server/api/src/web3/mod.rs` 添加 swap 处理器函数
+   - 后端: 在 `server/router/src/web3/mod.rs` 添加路由
+   - 新增端点:
+     - `GET /web3/swap/tokens` - 获取可交易的代币列表
+     - `GET /web3/swap/quote/:from/:to/:amount` - 获取兑换报价
+     - `GET /web3/swap/routes/:from/:to` - 获取最佳路由
+     - `POST /web3/swap/build` - 构建兑换交易
+   - 前端: 在 `frontend/src/service/api/web3.ts` 添加对应 API 函数
 
 ### 代码改动统计
-- 修改: `server/api/src/web3/mod.rs` (-70行重复代码, +70行正确位置)
-- 总代码量: 0 行 (重构)
+- 修改: `server/api/src/web3/mod.rs` (+60行)
+- 修改: `server/router/src/web3/mod.rs` (+15行)
+- 修改: `frontend/src/service/api/web3.ts` (+45行)
+- 总代码量: +120 行
 
 ### 验证
 - 后端 `cargo check` ✅
-- 后端 `cargo check --package server-router` ✅
+- 前端 `pnpm run build` ✅
 
 ### 项目状态总结
 - [x] Wallet CRUD + EIP-191签名验证 ✅
@@ -43,6 +50,7 @@
 - [x] Rust Clippy 代码质量优化 ✅
 - [x] 集成测试 (ERC20) ✅
 - [x] 单元测试 (Transaction Decoder) ✅
+- [x] **Swap API 端点** ✅ (新增)
 
 ### 待解决
 - (无)

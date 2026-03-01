@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -333,5 +333,10 @@ impl Web3Router {
             .route("/nft/metadata/{tokenUri}", get(Web3Api::get_nft_metadata))
             .route("/nft/{contract}/owners", post(Web3Api::get_nft_owners_batch))
             .route("/nft/{contract}/details", post(Web3Api::get_nfts))
+            // Swap routes
+            .route("/swap/tokens", get(get_swap_tokens))
+            .route("/swap/quote/{from}/{to}/{amount}", get(get_swap_quote))
+            .route("/swap/routes/{from}/{to}", get(get_swap_routes))
+            .route("/swap/build", post(build_swap_transaction))
     }
 }

@@ -16,6 +16,7 @@ pub use server_service::web3::Web3KeyManagerService;
 pub use server_service::web3::nft::{NFTInfo, NFTService};
 pub use server_service::web3::{KLineService, IndicatorService, Candlestick, TimePeriod, TradingPair, TechnicalAnalysis};
 pub use server_service::web3::price_fetcher::{PriceService, RealPriceData, CoinSearchResult};
+pub use server_service::web3::swap_service::{SwapService, SwapQuote, SwapTransaction, SwapRoute, TokenSwapInfo};
 
 use serde::Deserialize;
 
@@ -1016,4 +1017,88 @@ pub struct TopCoinsParams {
 #[derive(Debug, Deserialize)]
 pub struct SearchCoinsParams {
     pub query: String,
+}
+
+// ============ Swap API Handlers ============
+
+/// Get available tokens for swap
+pub async fn get_swap_tokens() -> Json<serde_json::Value> {
+    let service = SwapService::new();
+    let tokens = service.get_swap_tokens();
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": tokens,
+        "msg": "success",
+        "success": true
+    }))
+}
+
+/// Get swap quote
+pub async fn get_swap_quote(
+    Path((from, to, amount)): Path<(String, String, String)>,
+) -> Json<serde_json::Value> {
+    let service = SwapService::new();
+    let quote = service.get_quote(&from, &to, &amount);
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": quote,
+        "msg": "success",
+        "success": true
+    }))
+}
+
+/// Get swap routes
+pub async fn get_swap_routes(
+    Path((from, to)): Path<(String, String)>,
+) -> Json<serde_json::Value> {
+    let service = SwapService::new();
+    let routes = service.get_routes(&from, &to);
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": routes,
+        "msg": "success",
+        "success": true
+    }))
+}
+
+/// Input for building swap transaction
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BuildSwapInput {
+    pub from_token: String,
+    pub to_token: String,
+    pub from_amount: String,
+    pub to_amount_min: String,
+    pub recipient: String,
+    pub slippage: f64,
+}
+
+/// Build swap transaction
+pub async fn build_swap_transaction(
+    Json(input): Json<BuildSwapInput>,
+) -> Json<serde_json::Value> {
+    let service = SwapService::new();
+    
+    let quote = SwapQuote {
+        from_token: input.from_token,
+        to_token: input.to_token,
+        from_amount: input.from_amount.clone(),
+        to_amount: input.to_amount_min.clone(),
+        to_amount_min: input.to_amount_min,
+        price_impact: input.slippage,
+        gas_estimate: "210000".to_string(),
+        route: vec![],
+    };
+    
+    let tx = service.build_transaction(&quote, &input.recipient);
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": tx,
+        "msg": "success",
+        "success": true
+    }))
 }
