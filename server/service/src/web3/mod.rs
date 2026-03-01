@@ -11,6 +11,7 @@ pub mod receipt_parser;
 pub mod transaction_decoder;
 pub mod key_manager;
 pub mod block_scanner;
+pub mod nft;
 
 use async_trait::async_trait;
 use chrono::Local;

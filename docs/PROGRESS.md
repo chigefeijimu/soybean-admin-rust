@@ -1,5 +1,116 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 09:35 - 本次)
+
+### 本次完成的功能
+1. **NFT 查询服务模块** (server/service/src/web3/nft.rs):
+   - 新增 `NFTService` - NFT 查询服务
+   - `owner_of` - 查询 ERC721 代币的 ownerOf
+   - `token_uri` - 查询 ERC721 代币的 tokenURI
+   - `fetch_metadata` - 从 tokenURI 获取 NFT 元数据
+   - `get_owners_batch` - 批量查询 NFT 持有者
+   - `get_nfts` - 获取多个 NFT 的详细信息（包括元数据）
+   - 支持 ipfs:// 和 https:// 协议
+
+2. **NFT API 端点** (server/api/src/web3/mod.rs):
+   - GET `/web3/nft/{contract}/{tokenId}/owner` - 查询 NFT 持有者
+   - GET `/web3/nft/{contract}/{tokenId}/token-uri` - 查询 NFT tokenURI
+   - GET `/web3/nft/metadata/{tokenUri}` - 获取 NFT 元数据
+   - POST `/web3/nft/{contract}/owners` - 批量查询 NFT 持有者
+   - POST `/web3/nft/{contract}/details` - 获取多个 NFT 详细信息
+
+### 代码改动统计
+- 新增: `server/service/src/web3/nft.rs` (~230行)
+- 修改: `server/service/src/web3/mod.rs` (+1行模块导出)
+- 修改: `server/api/src/web3/mod.rs` (+100行API端点)
+- 总代码量: ~331 行
+
+### 验证
+- `cargo check --package server-service` ✅
+- `cargo check --package server-api` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+- [x] NFT查询服务模块 ✅ (新增)
+
+### 可能的改进点
+- 集成测试
+- 性能优化
+
+---
+
+## 开发迭代 (2026-03-01 09:12 - 本次)
+
+### 本次完成的功能
+1. **TypeScript类型定义增强** (web3.d.ts):
+   - 新增 `BlockInfo` - 区块信息类型
+   - 新增 `TransactionReceipt` - 交易回执类型
+   - 新增 `Log` - 日志类型
+   - 新增 `ApiResponse` / `PaginatedResponse` - API响应类型
+   - 新增 `TransactionListItem` - 交易列表项类型
+
+2. **TransactionHistory组件类型改进** (TransactionHistory.vue):
+   - 导入 `TransactionListItem` 和 `ParsedReceipt` 类型
+   - 将 `transactions` 的类型从 `any[]` 改为 `TransactionListItem[]`
+   - 将 `selectedTx` 的类型从 `any` 改为 `TransactionListItem | null`
+   - 将 `receiptData` 的类型从 `any` 改为 `ParsedReceipt | null`
+   - 修复 `viewReceipt` 函数参数类型
+   - 改进错误处理：从 `catch (e: any)` 改为 `catch (e: unknown)` 并正确提取错误信息
+   - 修复filter类型：使用 `as const` 断言
+
+### 代码改动统计
+- 修改: `frontend/src/typings/web3.d.ts` (+70行)
+- 修改: `frontend/src/components/web3/TransactionHistory.vue` (+5行, -10行)
+- 总代码量: ~65 行
+
+### 验证
+- `pnpm build` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+
+### 可能的改进点
+- 集成测试
+- 性能优化
+
+---
+
 ## 开发迭代 (2026-03-01 09:02 - 本次)
 
 ### 本次完成的功能

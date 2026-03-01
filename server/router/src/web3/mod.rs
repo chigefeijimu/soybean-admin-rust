@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, NFTService};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -264,7 +264,14 @@ impl Web3Router {
             .route("/block/{blockNumber}", get(Web3Api::get_block))
             .route("/block/latest", get(Web3Api::get_latest_block))
             .route("/transaction/receipt/{txHash}", get(Web3Api::get_transaction_receipt))
-            .route("/scan/{from}/{to}", get(Web3Api::scan_blocks));
+            .route("/scan/{from}/{to}", get(Web3Api::scan_blocks))
+            // NFT routes - TODO: enable after fixing router visibility
+            // .route("/nft/{contract}/{tokenId}/owner", get(Web3Api::get_nft_owner))
+            // .route("/nft/{contract}/{tokenId}/token-uri", get(Web3Api::get_nft_token_uri))
+            // .route("/nft/metadata/{tokenUri}", get(Web3Api::get_nft_metadata))
+            // .route("/nft/{contract}/owners", post(Web3Api::get_nft_owners_batch))
+            // .route("/nft/{contract}/details", post(Web3Api::get_nfts))
+            ;
 
         router
     }
