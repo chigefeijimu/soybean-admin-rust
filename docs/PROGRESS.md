@@ -1,5 +1,53 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 14:30 - 本次)
+
+### 本次完成的功能
+1. **新增 Transaction Decoder 单元测试**:
+   - 新增 `server/service/tests/web3_transaction_decoder.rs`
+   - 测试用例: method_signature_database_new, method_signature_database_unknown, decode_transfer, decode_approve, decode_weth_deposit, decode_weth_withdraw, decode_unknown_method, decode_with_0x_prefix, decode_short_data, decoded_data_fields, decode_erc721_safe_transfer, decode_uniswap_exact_input_single
+
+### 代码改动统计
+- 新增: `server/service/tests/web3_transaction_decoder.rs` (~215行)
+- 总代码量: +215 行
+
+### 验证
+- 后端 `cargo check` ✅
+- 后端 `cargo test` ✅ (40个测试全部通过: 28个单元测试 + 6个ERC20集成测试 + 12个Transaction Decoder测试)
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+- [x] NFT查询服务模块 ✅
+- [x] NFT Gallery前端API集成 ✅
+- [x] TypeScript配置优化 ✅
+- [x] 前端代码清理 (移除console语句) ✅
+- [x] Rust Clippy 代码质量优化 ✅
+- [x] **集成测试 (ERC20)** ✅
+- [x] **单元测试 (Transaction Decoder)** ✅ (新增)
+
+### 待解决
+- (无)
+
+---
+
 ## 开发迭代 (2026-03-01 13:41 - 本次)
 
 ### 本次完成的功能
