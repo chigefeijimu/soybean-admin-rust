@@ -1,5 +1,25 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 09:52 - 本次)
+
+### 本次发现的问题
+1. **NFT路由启用失败**: 尝试启用NFT API路由，但遇到编译错误
+   - `server/api/src/web3/mod.rs` 中已定义 NFT 方法 (get_nft_owner, get_nft_token_uri, etc.)
+   - `server/router/src/web3/mod.rs` 中尝试启用这些路由
+   - 编译错误: `no function or associated item named 'get_nft_owner' found for struct 'Web3Api'`
+   - server-api 包单独编译成功，但 router 包无法访问这些方法
+   - 原因: 模块可见性问题，需要进一步调查
+
+### 项目状态检查
+- 后端编译: `cargo check` ✅
+- 前端构建: dist目录存在（之前已成功构建）
+
+### 待解决
+- [ ] 调查并修复NFT路由的模块可见性问题
+- [ ] 集成测试
+
+---
+
 ## 开发迭代 (2026-03-01 09:35 - 本次)
 
 ### 本次完成的功能
