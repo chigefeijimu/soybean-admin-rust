@@ -28,9 +28,11 @@ pub mod batch_transfer;
 pub mod address_book;
 pub mod gas_analytics;
 pub mod token_analytics;
+pub mod yield_optimizer;
 
 // Re-export TokenAnalyticsService
 pub use token_analytics::TokenAnalyticsService;
+pub use yield_optimizer::{YieldOptimizerService, TYieldOptimizerService, YieldOpportunity, YieldPoolInfo, YieldProtocolInfo, PortfolioPosition, YieldOptimizationResult, OptimizeInput, calculate_compound_interest, calculate_apy_to_apr, calculate_apr_to_apy};
 
 use async_trait::async_trait;
 use chrono::Local;

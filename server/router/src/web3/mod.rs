@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order, search_tokens, get_token_analytics, get_token_holders, get_token_transfers, get_price_history, get_analytics_summary, get_holder_distribution, get_token_security};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order, search_tokens, get_token_analytics, get_token_holders, get_token_transfers, get_price_history, get_analytics_summary, get_holder_distribution, get_token_security, get_top_yields, get_yield_protocols, analyze_yield_portfolio, get_yield_opportunities, compare_yield_tokens};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -442,5 +442,11 @@ impl Web3Router {
             .route("/token/summary", get(get_analytics_summary))
             .route("/token/{address}/distribution", get(get_holder_distribution))
             .route("/token/{address}/security", get(get_token_security))
+            // Yield Optimizer routes
+            .route("/yield/top", get(get_top_yields))
+            .route("/yield/protocols", get(get_yield_protocols))
+            .route("/yield/analyze", post(analyze_yield_portfolio))
+            .route("/yield/opportunities/{walletAddress}", get(get_yield_opportunities))
+            .route("/yield/compare", post(compare_yield_tokens))
     }
 }

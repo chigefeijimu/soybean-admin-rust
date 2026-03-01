@@ -47,6 +47,11 @@ pub use server_service::web3::token_analytics::{
     TokenComparison, TokenSentiment, HolderDistribution,
     TokenTreasury, TreasuryToken, HistoricalSnapshot,
 };
+pub use server_service::web3::yield_optimizer::{
+    YieldOptimizerService, TYieldOptimizerService, 
+    YieldOpportunity, YieldPoolInfo, YieldProtocolInfo, 
+    PortfolioPosition, YieldOptimizationResult, OptimizeInput,
+};
 
 use serde::Deserialize;
 use std::sync::Mutex;
@@ -2258,4 +2263,132 @@ pub async fn get_token_security(
             "success": false
         })),
     }
+}
+
+// ============ Yield Optimizer API ============
+
+/// Get top yield opportunities
+pub async fn get_top_yields(
+    Query(params): Query<YieldYieldQueryParams>,
+) -> Json<serde_json::Value> {
+    let service = YieldOptimizerService::new_without_provider();
+    
+    match service.get_top_yields(params.chain.clone(), params.limit).await {
+        Ok(pools) => Json(serde_json::json!({
+            "code": 200,
+            "data": pools,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.message,
+            "success": false
+        })),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct YieldYieldQueryParams {
+    pub chain: Option<String>,
+    pub limit: Option<i32>,
+}
+
+/// Get yield protocols list
+pub async fn get_yield_protocols() -> Json<serde_json::Value> {
+    let service = YieldOptimizerService::new_without_provider();
+    
+    
+    match service.get_protocols().await {
+        Ok(protocols) => Json(serde_json::json!({
+            "code": 200,
+            "data": protocols,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.message,
+            "success": false
+        })),
+    }
+}
+
+/// Analyze portfolio and get optimization suggestions
+pub async fn analyze_yield_portfolio(
+    Json(input): Json<OptimizeInput>,
+) -> Json<serde_json::Value> {
+    let service = YieldOptimizerService::new_without_provider();
+    
+    
+    match service.analyze_portfolio(input).await {
+        Ok(result) => Json(serde_json::json!({
+            "code": 200,
+            "data": result,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.message,
+            "success": false
+        })),
+    }
+}
+
+/// Get optimization opportunities for a wallet
+pub async fn get_yield_opportunities(
+    Path(wallet_address): Path<String>,
+) -> Json<serde_json::Value> {
+    let service = YieldOptimizerService::new_without_provider();
+    
+    
+    match service.get_optimization_opportunities(&wallet_address).await {
+        Ok(opportunities) => Json(serde_json::json!({
+            "code": 200,
+            "data": opportunities,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.message,
+            "success": false
+        })),
+    }
+}
+
+/// Compare yields for given tokens
+pub async fn compare_yield_tokens(
+    Json(input): Json<YieldCompareInput>,
+) -> Json<serde_json::Value> {
+    let service = YieldOptimizerService::new_without_provider();
+    
+    
+    match service.compare_yields(input.tokens, input.amount).await {
+        Ok(opportunities) => Json(serde_json::json!({
+            "code": 200,
+            "data": opportunities,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.message,
+            "success": false
+        })),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct YieldCompareInput {
+    pub tokens: Vec<String>,
+    pub amount: f64,
 }
