@@ -209,11 +209,11 @@ mod tests {
         // 1000 * 50 / 10000 = 5 (0.5% slippage)
         // min = 1000 - 5 = 995
         let result = calculate_slippage("1000", 50).unwrap();
-        assert_eq!(result, "3e3"); // 995 in hex
+        assert_eq!(result, "995");
         
         // Zero slippage
         let result = calculate_slippage("1000", 0).unwrap();
-        assert_eq!(result, "3e8"); // 1000 in hex
+        assert_eq!(result, "1000");
     }
 
     #[test]
