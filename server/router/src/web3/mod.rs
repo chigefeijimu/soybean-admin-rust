@@ -140,6 +140,25 @@ impl Web3Router {
                 "Web3MarketDataApi",
                 "Get price history",
             ),
+            // K-line and trading routes
+            RouteInfo::new(
+                &format!("{}/kline/:base/:quote/:period", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get K-line candlestick data",
+            ),
+            RouteInfo::new(
+                &format!("{}/price/:base/:quote", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get current price for trading pair",
+            ),
+            RouteInfo::new(
+                &format!("{}/indicators/:base/:quote/:period", base_path),
+                Method::GET,
+                "Web3MarketDataApi",
+                "Get technical indicators",
+            ),
             RouteInfo::new(
                 &format!("{}/market/search/:query", base_path),
                 Method::GET,
@@ -287,6 +306,14 @@ impl Web3Router {
             .route("/market/gas/{chainId}", get(Web3MarketDataApi::get_gas_price))
             .route("/market/defi", get(Web3MarketDataApi::get_defi_protocols))
             .route("/market/history/{symbol}/{days}", get(Web3MarketDataApi::get_price_history))
+            // K-line and trading routes
+            .route("/kline/{base}/{quote}/{period}", get(Web3MarketDataApi::get_kline))
+            .route("/price/{base}/{quote}", get(Web3MarketDataApi::get_price))
+            .route("/indicators/{base}/{quote}/{period}", get(Web3MarketDataApi::get_indicators))
+            // Real price from CoinGecko
+            .route("/price/real/{symbol}", get(Web3Api::get_real_price))
+            .route("/price/top", get(Web3Api::get_top_coins))
+            .route("/price/search", get(Web3Api::search_coins))
             .route("/market/search/{query}", get(Web3MarketDataApi::search_tokens))
             .route("/market/trending", get(Web3MarketDataApi::get_trending))
             .route("/market/gainers", get(Web3MarketDataApi::get_top_gainers))

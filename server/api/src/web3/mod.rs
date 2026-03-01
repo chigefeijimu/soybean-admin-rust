@@ -14,6 +14,8 @@ use server_service::web3::{
 };
 pub use server_service::web3::Web3KeyManagerService;
 pub use server_service::web3::nft::{NFTInfo, NFTService};
+pub use server_service::web3::{KLineService, IndicatorService, Candlestick, TimePeriod, TradingPair, TechnicalAnalysis};
+pub use server_service::web3::price_fetcher::{PriceService, RealPriceData, CoinSearchResult};
 
 use serde::Deserialize;
 
@@ -845,4 +847,173 @@ impl Web3MarketDataApi {
             }))),
         }
     }
+
+    /// Get K-line (candlestick) data
+    pub async fn get_kline(
+        Path((base, quote, period)): Path<(String, String, String)>,
+        Query(params): Query<KLineQueryParams>,
+    ) -> Json<serde_json::Value> {
+        let service = KLineService::new();
+        
+        let trading_pair = TradingPair {
+            base: base.to_uppercase(),
+            quote: quote.to_uppercase(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let time_period = TimePeriod::from_str(&period).unwrap_or(TimePeriod::OneHour);
+        let limit = params.limit.unwrap_or(100);
+        
+        let candlesticks = service.get_candlesticks(&trading_pair, time_period, limit);
+        
+        Json(serde_json::json!({
+            "code": 200,
+            "data": candlesticks,
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Get latest price for a trading pair
+    pub async fn get_price(
+        Path((base, quote)): Path<(String, String)>,
+    ) -> Json<serde_json::Value> {
+        let service = KLineService::new();
+        
+        let trading_pair = TradingPair {
+            base: base.to_uppercase(),
+            quote: quote.to_uppercase(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let price = service.get_price(&trading_pair.base);
+        let (change, change_percent) = service.get_24h_change(&trading_pair.base);
+        
+        Json(serde_json::json!({
+            "code": 200,
+            "data": {
+                "base": trading_pair.base,
+                "quote": trading_pair.quote,
+                "price": price,
+                "change24h": change,
+                "changePercent": change_percent
+            },
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Get technical indicators for a trading pair
+    pub async fn get_indicators(
+        Path((base, quote, period)): Path<(String, String, String)>,
+    ) -> Json<serde_json::Value> {
+        let kline_service = KLineService::new();
+        
+        let trading_pair = TradingPair {
+            base: base.to_uppercase(),
+            quote: quote.to_uppercase(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let time_period = TimePeriod::from_str(&period).unwrap_or(TimePeriod::OneHour);
+        let candlesticks = kline_service.get_candlesticks(&trading_pair, time_period, 100);
+        
+        let indicator_service = IndicatorService::new();
+        let analysis = indicator_service.analyze(&candlesticks);
+        
+        Json(serde_json::json!({
+            "code": 200,
+            "data": analysis,
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Get real price from CoinGecko API
+    pub async fn get_real_price(
+        Path(symbol): Path<String>,
+    ) -> Json<serde_json::Value> {
+        let service = PriceService::new();
+        
+        match service.get_price(&symbol).await {
+            Ok(data) => Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))
+        }
+    }
+
+    /// Get top coins by market cap
+    pub async fn get_top_coins(
+        Query(params): Query<TopCoinsParams>,
+    ) -> Json<serde_json::Value> {
+        let service = PriceService::new();
+        let limit = params.limit.unwrap_or(20);
+        
+        match service.get_top_coins(limit).await {
+            Ok(data) => Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))
+        }
+    }
+
+    /// Search coins
+    pub async fn search_coins(
+        Query(params): Query<SearchCoinsParams>,
+    ) -> Json<serde_json::Value> {
+        let service = PriceService::new();
+        
+        match service.search_coins(&params.query).await {
+            Ok(data) => Json(serde_json::json!({
+                "code": 200,
+                "data": data,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e,
+                "success": false
+            }))
+        }
+    }
+}
+
+/// Query params for K-line
+#[derive(Debug, Deserialize)]
+pub struct KLineQueryParams {
+    pub limit: Option<usize>,
+}
+
+/// Query params for top coins
+#[derive(Debug, Deserialize)]
+pub struct TopCoinsParams {
+    pub limit: Option<usize>,
+}
+
+/// Query params for coin search
+#[derive(Debug, Deserialize)]
+pub struct SearchCoinsParams {
+    pub query: String,
 }
