@@ -37,6 +37,23 @@ pub struct BollingerBands {
     pub bandwidth: f64,
 }
 
+/// VWAP (Volume Weighted Average Price)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VwapData {
+    pub value: f64,
+    pub typical_price: f64,
+    pub volume: f64,
+}
+
+/// ATR (Average True Range)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AtrData {
+    pub value: f64,
+    pub high: f64,
+    pub low: f64,
+    pub volatility: String,
+}
+
 /// Technical Analysis Result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TechnicalAnalysis {
@@ -44,6 +61,8 @@ pub struct TechnicalAnalysis {
     pub rsi: Option<RsiData>,
     pub macd: Option<MacdData>,
     pub bollinger: Option<BollingerBands>,
+    pub vwap: Option<VwapData>,
+    pub atr: Option<AtrData>,
     pub trend: String,
     pub signal: String,
 }
@@ -223,6 +242,81 @@ impl IndicatorService {
         })
     }
 
+    /// Calculate VWAP (Volume Weighted Average Price)
+    pub fn vwap(candles: &[Candlestick]) -> Option<VwapData> {
+        if candles.is_empty() {
+            return None;
+        }
+
+        let mut cumulative_tpv = 0.0; // cumulative typical price * volume
+        let mut cumulative_volume = 0.0;
+
+        for candle in candles {
+            let typical_price = (candle.high + candle.low + candle.close) / 3.0;
+            cumulative_tpv += typical_price * candle.volume;
+            cumulative_volume += candle.volume;
+        }
+
+        if cumulative_volume == 0.0 {
+            return None;
+        }
+
+        let vwap_value = cumulative_tpv / cumulative_volume;
+        let last_candle = candles.last().unwrap();
+        let typical_price = (last_candle.high + last_candle.low + last_candle.close) / 3.0;
+
+        Some(VwapData {
+            value: vwap_value,
+            typical_price,
+            volume: cumulative_volume,
+        })
+    }
+
+    /// Calculate ATR (Average True Range)
+    pub fn atr(candles: &[Candlestick], period: u32) -> Option<AtrData> {
+        if candles.len() < (period + 1) as usize {
+            return None;
+        }
+
+        let mut true_ranges: Vec<f64> = Vec::new();
+
+        for i in 1..candles.len() {
+            let high = candles[i].high;
+            let low = candles[i].low;
+            let prev_close = candles[i - 1].close;
+
+            let tr = (high - low).max((high - prev_close).abs()).max((low - prev_close).abs());
+            true_ranges.push(tr);
+        }
+
+        if true_ranges.len() < period as usize {
+            return None;
+        }
+
+        // Calculate ATR using Wilder's smoothing method
+        let mut atr_value = true_ranges.iter().take(period as usize).sum::<f64>() / period as f64;
+
+        for tr in true_ranges.iter().skip(period as usize) {
+            atr_value = ((period as f64 - 1.0) * atr_value + tr) / period as f64;
+        }
+
+        let last_candle = candles.last().unwrap();
+        let volatility = if atr_value > last_candle.close * 0.03 {
+            "high".to_string()
+        } else if atr_value > last_candle.close * 0.01 {
+            "medium".to_string()
+        } else {
+            "low".to_string()
+        };
+
+        Some(AtrData {
+            value: atr_value,
+            high: last_candle.high,
+            low: last_candle.low,
+            volatility,
+        })
+    }
+
     /// Full technical analysis
     pub fn analyze(&self, candles: &[Candlestick]) -> TechnicalAnalysis {
         let ma5 = Self::sma(candles, 5);
@@ -248,7 +342,9 @@ impl IndicatorService {
         let rsi = Self::rsi(candles, 14);
         let macd = Self::macd(candles);
         let bollinger = Self::bollinger_bands(candles, 20, 2.0);
-        
+        let vwap = Self::vwap(candles);
+        let atr = Self::atr(candles, 14);
+
         // Determine signal
         let mut signal = "neutral".to_string();
         if let Some(rsi_data) = &rsi {
@@ -272,6 +368,8 @@ impl IndicatorService {
             rsi,
             macd,
             bollinger,
+            vwap,
+            atr,
             trend,
             signal,
         }

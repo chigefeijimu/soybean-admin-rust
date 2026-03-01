@@ -14,7 +14,7 @@ use server_service::web3::{
 };
 pub use server_service::web3::Web3KeyManagerService;
 pub use server_service::web3::nft::{NFTInfo, NFTService};
-pub use server_service::web3::{KLineService, IndicatorService, Candlestick, TimePeriod, TradingPair, TechnicalAnalysis};
+pub use server_service::web3::{KLineService, IndicatorService, Candlestick, TimePeriod, TradingPair, TechnicalAnalysis, VwapData, AtrData};
 pub use server_service::web3::price_fetcher::{PriceService, RealPriceData, CoinSearchResult};
 pub use server_service::web3::swap_service::{SwapService, SwapQuote, SwapTransaction, SwapRoute, TokenSwapInfo};
 

@@ -697,7 +697,7 @@ impl TContractService for Web3ContractService {
 pub use receipt_parser::{ParsedReceipt, TransactionReceipt};
 pub use block_scanner::{BlockInfo, ScanResult, ScanFilter, TransactionAnalysis};
 pub use kline::{Candlestick, TimePeriod, TradingPair, KLineService};
-pub use indicators::{MovingAverage, RsiData, MacdData, BollingerBands, TechnicalAnalysis, IndicatorService};
+pub use indicators::{MovingAverage, RsiData, MacdData, BollingerBands, VwapData, AtrData, TechnicalAnalysis, IndicatorService};
 pub use price_fetcher::{PriceService, RealPriceData, CoinSearchResult};
 
 #[async_trait]
