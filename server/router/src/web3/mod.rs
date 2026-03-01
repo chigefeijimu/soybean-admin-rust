@@ -309,6 +309,28 @@ impl Web3Router {
             ),
         ];
 
+        // Token Approval Manager routes
+        let approval_routes = vec![
+            RouteInfo::new(
+                &format!("{}/approvals", base_path),
+                Method::GET,
+                "Web3Api",
+                "Get token approvals for a wallet",
+            ),
+            RouteInfo::new(
+                &format!("{}/approvals/revoke", base_path),
+                Method::POST,
+                "Web3Api",
+                "Create approval revocation transaction",
+            ),
+            RouteInfo::new(
+                &format!("{}/spender/:address", base_path),
+                Method::GET,
+                "Web3Api",
+                "Get spender/protocol info",
+            ),
+        ];
+
         // Add all routes
         for route in wallet_routes.into_iter()
             .chain(contract_routes.into_iter())
@@ -318,6 +340,7 @@ impl Web3Router {
             .chain(block_scanner_routes.into_iter())
             .chain(nft_routes.into_iter())
             .chain(bridge_routes.into_iter())
+            .chain(approval_routes.into_iter())
         {
             add_route(route).await;
         }
@@ -392,5 +415,9 @@ impl Web3Router {
             .route("/bridge/quote", get(Web3BridgeApi::get_quote))
             .route("/bridge/build", post(Web3BridgeApi::build_transaction))
             .route("/bridge/history", get(Web3BridgeApi::get_history))
+            // Token Approval Manager routes
+            .route("/approvals", get(Web3Api::get_token_approvals))
+            .route("/approvals/revoke", post(Web3Api::create_approval_revoke_tx))
+            .route("/spender/{address}", get(Web3Api::get_spender_info))
     }
 }
