@@ -16,3 +16,4 @@ pub mod m20241023_091210_create_sys_user_role;
 pub mod m20260227_000001_create_web3_wallet;
 pub mod m20260227_000002_create_web3_contract;
 pub mod m20260227_000003_create_web3_transaction;
+pub mod m20260302_000001_create_address_book;

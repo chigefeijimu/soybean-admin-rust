@@ -27,6 +27,10 @@ pub use server_service::web3::bridge::{
     BridgeTransactionRequest, get_supported_chains, get_bridge_tokens, get_bridge_protocols,
 };
 pub use server_service::web3::bridge;
+pub use server_service::web3::address_book::{
+    AddressBookService, CreateAddressInput, UpdateAddressInput, AddressBookEntry,
+    TAddressBookService,
+};
 
 use serde::Deserialize;
 use std::sync::Mutex;
@@ -1791,4 +1795,143 @@ impl Web3Api {
             "success": true
         }))
     }
+}
+
+// ============ Address Book API ============
+
+impl Web3Api {
+    /// Create a new address book entry
+    pub async fn create_address_book_entry(
+        Extension(service): Extension<Arc<AddressBookService>>,
+        Json(input): Json<CreateAddressInput>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        // For demo, use a default user_id
+        let user_id = "default_user";
+        match service.create_address(user_id, input).await {
+            Ok(entry) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": entry,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Update an address book entry
+    pub async fn update_address_book_entry(
+        Extension(service): Extension<Arc<AddressBookService>>,
+        Json(input): Json<UpdateAddressInput>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.update_address(input).await {
+            Ok(entry) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": entry,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Delete an address book entry
+    pub async fn delete_address_book_entry(
+        Path(id): Path<String>,
+        Extension(service): Extension<Arc<AddressBookService>>,
+    ) -> Json<serde_json::Value> {
+        match service.delete_address(&id).await {
+            Ok(_) => Json(serde_json::json!({
+                "code": 200,
+                "data": true,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            })),
+        }
+    }
+
+    /// Get all address book entries for a user
+    pub async fn list_address_book_entries(
+        Extension(service): Extension<Arc<AddressBookService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        let user_id = "default_user";
+        match service.list_addresses(user_id).await {
+            Ok(entries) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": entries,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Search address book entries
+    pub async fn search_address_book(
+        Query(params): Query<AddressSearchParams>,
+        Extension(service): Extension<Arc<AddressBookService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        let user_id = "default_user";
+        match service.search_addresses(user_id, &params.q).await {
+            Ok(entries) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": entries,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+
+    /// Toggle favorite status
+    pub async fn toggle_address_favorite(
+        Path(id): Path<String>,
+        Extension(service): Extension<Arc<AddressBookService>>,
+    ) -> Result<Json<serde_json::Value>, axum::response::Response> {
+        match service.toggle_favorite(&id).await {
+            Ok(entry) => Ok(Json(serde_json::json!({
+                "code": 200,
+                "data": entry,
+                "msg": "success",
+                "success": true
+            }))),
+            Err(e) => Ok(Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            }))),
+        }
+    }
+}
+
+/// Query params for address search
+#[derive(Debug, Deserialize)]
+pub struct AddressSearchParams {
+    q: String,
 }

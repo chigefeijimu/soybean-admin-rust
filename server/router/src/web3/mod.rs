@@ -419,5 +419,12 @@ impl Web3Router {
             .route("/approvals", get(Web3Api::get_token_approvals))
             .route("/approvals/revoke", post(Web3Api::create_approval_revoke_tx))
             .route("/spender/{address}", get(Web3Api::get_spender_info))
+            // Address Book routes
+            .route("/address-book", post(Web3Api::create_address_book_entry))
+            .route("/address-book/list", get(Web3Api::list_address_book_entries))
+            .route("/address-book/search", get(Web3Api::search_address_book))
+            .route("/address-book/{id}", put(Web3Api::update_address_book_entry))
+            .route("/address-book/{id}", delete(Web3Api::delete_address_book_entry))
+            .route("/address-book/{id}/favorite", post(Web3Api::toggle_address_favorite))
     }
 }

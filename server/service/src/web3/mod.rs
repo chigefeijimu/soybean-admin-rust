@@ -23,6 +23,7 @@ pub mod price_fetcher;
 pub mod order;
 pub mod bridge;
 pub mod batch_transfer;
+pub mod address_book;
 
 use async_trait::async_trait;
 use chrono::Local;
