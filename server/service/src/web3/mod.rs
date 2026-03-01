@@ -17,6 +17,9 @@ pub mod ens_service;
 pub mod ipfs_service;
 pub mod price_alert;
 pub mod swap_service;
+pub mod kline;
+pub mod indicators;
+pub mod price_fetcher;
 
 use async_trait::async_trait;
 use chrono::Local;
@@ -693,6 +696,9 @@ impl TContractService for Web3ContractService {
 // ============ Transaction Service ============
 pub use receipt_parser::{ParsedReceipt, TransactionReceipt};
 pub use block_scanner::{BlockInfo, ScanResult, ScanFilter, TransactionAnalysis};
+pub use kline::{Candlestick, TimePeriod, TradingPair, KLineService};
+pub use indicators::{MovingAverage, RsiData, MacdData, BollingerBands, TechnicalAnalysis, IndicatorService};
+pub use price_fetcher::{PriceService, RealPriceData, CoinSearchResult};
 
 #[async_trait]
 pub trait TTransactionService {
