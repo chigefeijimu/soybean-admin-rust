@@ -3,7 +3,7 @@ use chrono::Local;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, Set,
 };
-use server_core::web::{error::AppError, page::PaginatedData};
+use server_core::web::{auth::User, error::AppError, page::PaginatedData};
 use server_model::admin::{
     entities::{
         prelude::SysDomain,
@@ -25,7 +25,7 @@ pub trait TDomainService {
         params: DomainPageRequest,
     ) -> Result<PaginatedData<SysDomainModel>, AppError>;
 
-    async fn create_domain(&self, input: CreateDomainInput) -> Result<SysDomainModel, AppError>;
+    async fn create_domain(&self, input: CreateDomainInput, user: User) -> Result<SysDomainModel, AppError>;
     async fn get_domain(&self, id: &str) -> Result<SysDomainModel, AppError>;
     async fn update_domain(&self, input: UpdateDomainInput) -> Result<SysDomainModel, AppError>;
     async fn delete_domain(&self, id: &str) -> Result<(), AppError>;
@@ -106,7 +106,7 @@ impl TDomainService for SysDomainService {
         })
     }
 
-    async fn create_domain(&self, input: CreateDomainInput) -> Result<SysDomainModel, AppError> {
+    async fn create_domain(&self, input: CreateDomainInput, user: User) -> Result<SysDomainModel, AppError> {
         self.check_domain_exists(None, &input.code, &input.name)
             .await?;
 
@@ -119,7 +119,7 @@ impl TDomainService for SysDomainService {
             description: Set(input.description),
             status: Set(Status::Enabled),
             created_at: Set(Local::now().naive_local()),
-            created_by: Set("TODO".to_string()),
+            created_by: Set(user.user_id()),
             ..Default::default()
         };
 

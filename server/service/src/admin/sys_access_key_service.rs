@@ -8,7 +8,7 @@ use sea_orm::{
 };
 use server_core::{
     sign::{ApiKeyEvent, ValidatorType},
-    web::{error::AppError, page::PaginatedData},
+    web::{auth::User, error::AppError, page::PaginatedData},
 };
 use server_global::project_info;
 use server_model::admin::{
@@ -37,6 +37,7 @@ pub trait TAccessKeyService {
     async fn create_access_key(
         &self,
         input: CreateAccessKeyInput,
+        user: User,
     ) -> Result<SysAccessKeyModel, AppError>;
     async fn delete_access_key(&self, id: &str) -> Result<(), AppError>;
 
@@ -129,6 +130,7 @@ impl TAccessKeyService for SysAccessKeyService {
     async fn create_access_key(
         &self,
         input: CreateAccessKeyInput,
+        user: User,
     ) -> Result<SysAccessKeyModel, AppError> {
         let db = db_helper::get_db_connection().await?;
         let txn = db.begin().await.map_err(AppError::from)?;
@@ -144,7 +146,7 @@ impl TAccessKeyService for SysAccessKeyService {
             access_key_id: Set(access_key_id),
             access_key_secret: Set(access_key_secret),
             created_at: Set(Local::now().naive_local()),
-            created_by: Set("TODO".to_string()),
+            created_by: Set(user.user_id()),
         };
 
         let result = match self

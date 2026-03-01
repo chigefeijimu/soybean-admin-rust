@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, Query},
     Extension,
 };
-use server_core::web::{error::AppError, page::PaginatedData, res::Res, validator::ValidatedForm};
+use server_core::web::{auth::User, error::AppError, page::PaginatedData, res::Res, validator::ValidatedForm};
 use server_service::admin::{
     AccessKeyPageRequest, CreateAccessKeyInput, SysAccessKeyModel, SysAccessKeyService,
     TAccessKeyService,
@@ -25,9 +25,10 @@ impl SysAccessKeyApi {
 
     pub async fn create_access_key(
         Extension(service): Extension<Arc<SysAccessKeyService>>,
+        Extension(user): Extension<User>,
         ValidatedForm(input): ValidatedForm<CreateAccessKeyInput>,
     ) -> Result<Res<SysAccessKeyModel>, AppError> {
-        service.create_access_key(input).await.map(Res::new_data)
+        service.create_access_key(input, user).await.map(Res::new_data)
     }
 
     pub async fn delete_access_key(

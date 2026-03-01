@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, Query},
     Extension,
 };
-use server_core::web::{error::AppError, page::PaginatedData, res::Res, validator::ValidatedForm};
+use server_core::web::{auth::User, error::AppError, page::PaginatedData, res::Res, validator::ValidatedForm};
 use server_service::admin::{
     CreateDomainInput, DomainPageRequest, SysDomainModel, SysDomainService, TDomainService,
     UpdateDomainInput,
@@ -25,9 +25,10 @@ impl SysDomainApi {
 
     pub async fn create_domain(
         Extension(service): Extension<Arc<SysDomainService>>,
+        Extension(user): Extension<User>,
         ValidatedForm(input): ValidatedForm<CreateDomainInput>,
     ) -> Result<Res<SysDomainModel>, AppError> {
-        service.create_domain(input).await.map(Res::new_data)
+        service.create_domain(input, user).await.map(Res::new_data)
     }
 
     pub async fn get_domain(

@@ -4,7 +4,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, EntityTrait, IntoActiveModel, PaginatorTrait,
     QueryFilter, Set,
 };
-use server_core::web::{error::AppError, page::PaginatedData};
+use server_core::web::{auth::User, error::AppError, page::PaginatedData};
 use server_model::admin::{
     entities::{
         prelude::SysUser,
@@ -29,7 +29,7 @@ pub trait TUserService {
         params: UserPageRequest,
     ) -> Result<PaginatedData<UserWithoutPassword>, AppError>;
 
-    async fn create_user(&self, input: CreateUserInput) -> Result<UserWithoutPassword, AppError>;
+    async fn create_user(&self, input: CreateUserInput, user: User) -> Result<UserWithoutPassword, AppError>;
     async fn get_user(&self, id: &str) -> Result<UserWithoutPassword, AppError>;
     async fn update_user(&self, input: UpdateUserInput) -> Result<UserWithoutPassword, AppError>;
     async fn delete_user(&self, id: &str) -> Result<(), AppError>;
@@ -109,7 +109,7 @@ impl TUserService for SysUserService {
         })
     }
 
-    async fn create_user(&self, input: CreateUserInput) -> Result<UserWithoutPassword, AppError> {
+    async fn create_user(&self, input: CreateUserInput, user: User) -> Result<UserWithoutPassword, AppError> {
         self.check_username_unique(&input.username).await?;
 
         let db = db_helper::get_db_connection().await?;
@@ -125,7 +125,7 @@ impl TUserService for SysUserService {
             phone_number: Set(input.phone_number),
             status: Set(input.status),
             created_at: Set(Local::now().naive_local()),
-            created_by: Set("TODO".to_string()),
+            created_by: Set(user.user_id()),
             ..Default::default()
         };
 

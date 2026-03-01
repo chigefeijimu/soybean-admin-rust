@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, Query},
     Extension,
 };
-use server_core::web::{error::AppError, page::PaginatedData, res::Res, validator::ValidatedForm};
+use server_core::web::{auth::User, error::AppError, page::PaginatedData, res::Res, validator::ValidatedForm};
 use server_service::admin::{
     CreateRoleInput, RolePageRequest, SysRoleModel, SysRoleService, TRoleService, UpdateRoleInput,
 };
@@ -24,9 +24,10 @@ impl SysRoleApi {
 
     pub async fn create_role(
         Extension(service): Extension<Arc<SysRoleService>>,
+        Extension(user): Extension<User>,
         ValidatedForm(input): ValidatedForm<CreateRoleInput>,
     ) -> Result<Res<SysRoleModel>, AppError> {
-        service.create_role(input).await.map(Res::new_data)
+        service.create_role(input, user).await.map(Res::new_data)
     }
 
     pub async fn get_role(

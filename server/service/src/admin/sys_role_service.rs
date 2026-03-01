@@ -3,7 +3,7 @@ use chrono::Local;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, Set,
 };
-use server_core::web::{error::AppError, page::PaginatedData};
+use server_core::web::{auth::User, error::AppError, page::PaginatedData};
 use server_model::admin::{
     entities::{
         prelude::SysRole,
@@ -25,7 +25,7 @@ pub trait TRoleService {
         params: RolePageRequest,
     ) -> Result<PaginatedData<SysRoleModel>, AppError>;
 
-    async fn create_role(&self, input: CreateRoleInput) -> Result<SysRoleModel, AppError>;
+    async fn create_role(&self, input: CreateRoleInput, user: User) -> Result<SysRoleModel, AppError>;
     async fn get_role(&self, id: &str) -> Result<SysRoleModel, AppError>;
     async fn update_role(&self, input: UpdateRoleInput) -> Result<SysRoleModel, AppError>;
     async fn delete_role(&self, id: &str) -> Result<(), AppError>;
@@ -87,7 +87,7 @@ impl TRoleService for SysRoleService {
         })
     }
 
-    async fn create_role(&self, input: CreateRoleInput) -> Result<SysRoleModel, AppError> {
+    async fn create_role(&self, input: CreateRoleInput, user: User) -> Result<SysRoleModel, AppError> {
         let db = db_helper::get_db_connection().await?;
 
         self.check_role_exists(None, &input.code).await?;
@@ -100,7 +100,7 @@ impl TRoleService for SysRoleService {
             status: Set(input.status),
             description: Set(input.description),
             created_at: Set(Local::now().naive_local()),
-            created_by: Set("TODO".to_string()),
+            created_by: Set(user.user_id()),
             ..Default::default()
         };
 
