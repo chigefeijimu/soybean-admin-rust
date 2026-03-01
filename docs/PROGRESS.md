@@ -1,5 +1,32 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 18:50 - 本次)
+
+### 本次完成的代码质量优化
+1. **前端 ESLint 错误修复**:
+   - TradingChart.vue: 移除未使用的 Indicator 接口和 formatTime 函数
+   - TradingChart.vue: 移除 console.warn 语句
+   - TradingChart.vue: 将 i++ 替换为 i+=1 (符合 ESLint 规则)
+   - TradingPanel.vue: 移除未使用的 Order 接口
+   - TradingPanel.vue: 修复 Promise executor 返回值问题
+   - TradingPanel.vue: 将 alert 替换为 window.alert
+   - web3.ts: 重构 getKLine 函数参数，使用 options 对象 (解决 max-params 问题)
+
+### 代码改动统计
+- 修改: `frontend/src/components/web3/TradingChart.vue` (-10行)
+- 修改: `frontend/src/components/web3/TradingPanel.vue` (-8行)
+- 修改: `frontend/src/service/api/web3.ts` (+8行)
+- 总代码量: -10 行
+
+### 验证
+- 前端 `npm run lint` ✅
+- 前端 `npm run build` ✅
+
+### 项目状态总结
+- [x] **前端 ESLint 错误修复** ✅ (新增)
+
+---
+
 ## 开发迭代 (2026-03-01 18:15 - 本次)
 
 ### 本次完成的代码质量优化
