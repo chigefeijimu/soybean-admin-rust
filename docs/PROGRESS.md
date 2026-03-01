@@ -1,5 +1,59 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 10:52 - 本次)
+
+### 本次完成的功能
+1. **前端NFT Gallery API集成**:
+   - 添加NFT API方法到 `frontend/src/service/api/web3.ts`
+   - `getNFTOwner` - 查询NFT持有者
+   - `getNFTTokenURI` - 查询NFT tokenURI  
+   - `getNFTMetadata` - 获取NFT元数据
+   - `getNFTOwnersBatch` - 批量查询NFT持有者
+   - `getNFTDetails` - 获取多个NFT详细信息
+   
+2. **NFTGallery组件改造** (NFTGallery.vue):
+   - 从mock数据改为调用后端API
+   - 添加配置表单：合约地址、Token ID列表、链选择
+   - 添加"Load Demo"按钮回退到mock数据
+   - 支持从区块链获取真实NFT数据
+
+### 代码改动统计
+- 新增: `frontend/src/service/api/web3.ts` (+40行NFT API)
+- 修改: `frontend/src/components/web3/NFTGallery.vue` (+94行)
+- 总代码量: +134 行
+
+### 验证
+- 后端 `cargo check` ✅
+- 前端 `pnpm build` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+- [x] NFT查询服务模块 ✅
+- [x] **NFT Gallery前端API集成** ✅ (新增)
+
+### 待解决
+- [ ] 集成测试
+
+---
+
 ## 开发迭代 (2026-03-01 09:52 - 本次)
 
 ### 本次发现的问题
