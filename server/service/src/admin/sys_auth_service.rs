@@ -389,7 +389,7 @@ impl SysAuthService {
 
         let current_hour = Local::now().hour();
 
-        if current_hour < ALLOWED_START_HOUR || current_hour >= ALLOWED_END_HOUR {
+        if !(ALLOWED_START_HOUR..ALLOWED_END_HOUR).contains(&current_hour) {
             return Err(UserError::LoginNotAllowed.into());
         }
         Ok(())

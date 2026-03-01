@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum_casbin::casbin::{CoreApi, MgmtApi, RbacApi};
+use axum_casbin::casbin::RbacApi;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, TransactionTrait};
 use server_core::web::error::AppError;
 use server_model::admin::entities::{
@@ -19,6 +19,7 @@ use tokio::sync::RwLock;
 use crate::helper::db_helper;
 
 #[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum AuthorizationError {
     #[error("Domain not found")]
     DomainNotFound,
@@ -49,7 +50,7 @@ pub trait TAuthorizationService: Send + Sync {
         domain: String,
         role_id: String,
         permissions: Vec<String>,
-        enforcer: Arc<RwLock<impl CoreApi + MgmtApi + RbacApi + Send + Sync>>,
+        enforcer: Arc<RwLock<impl RbacApi + Send + Sync>>,
     ) -> Result<(), AppError>;
 
     /// 为角色分配路由
@@ -81,7 +82,7 @@ impl SysAuthorizationService {
             .await
             .map_err(AppError::from)?;
 
-        let domain = domain.ok_or_else(|| AuthorizationError::DomainNotFound)?;
+        let domain = domain.ok_or(AuthorizationError::DomainNotFound)?;
 
         let role = SysRole::find()
             .filter(SysRoleColumn::Id.eq(role_id))
@@ -89,7 +90,7 @@ impl SysAuthorizationService {
             .await
             .map_err(AppError::from)?;
 
-        let role = role.ok_or_else(|| AuthorizationError::RoleNotFound)?;
+        let role = role.ok_or(AuthorizationError::RoleNotFound)?;
 
         Ok((domain.code, role_id.to_string(), role.code))
     }
@@ -103,7 +104,7 @@ impl SysAuthorizationService {
             .await
             .map_err(AppError::from)?;
 
-        let role = role.ok_or_else(|| AuthorizationError::RoleNotFound)?;
+        let role = role.ok_or(AuthorizationError::RoleNotFound)?;
 
         Ok(role.code)
     }
@@ -114,7 +115,7 @@ impl SysAuthorizationService {
         role_code: &str,
         domain: &str,
         new_permissions: Vec<server_model::admin::entities::sys_endpoint::Model>,
-        enforcer: Arc<RwLock<impl CoreApi + MgmtApi + RbacApi + Send + Sync>>,
+        enforcer: Arc<RwLock<impl RbacApi + Send + Sync>>,
     ) -> Result<(), AppError> {
         let mut enforcer_write = enforcer.write().await;
         let existing_permissions =
@@ -193,7 +194,7 @@ impl TAuthorizationService for SysAuthorizationService {
         domain: String,
         role_id: String,
         permissions: Vec<String>,
-        enforcer: Arc<RwLock<impl CoreApi + MgmtApi + RbacApi + Send + Sync>>,
+        enforcer: Arc<RwLock<impl RbacApi + Send + Sync>>,
     ) -> Result<(), AppError> {
         let (domain_code, _, role_code) = self.check_domain_and_role(&domain, &role_id).await?;
 
@@ -266,7 +267,6 @@ impl TAuthorizationService for SysAuthorizationService {
                     role_id: sea_orm::Set(role_id.clone()),
                     menu_id: sea_orm::Set(*route_id),
                     domain: sea_orm::Set(domain_code.clone()),
-                    ..Default::default()
                 })
                 .collect();
 
@@ -339,7 +339,6 @@ impl TAuthorizationService for SysAuthorizationService {
                 .map(|user_id| SysUserRoleActiveModel {
                     role_id: sea_orm::Set(role_id.clone()),
                     user_id: sea_orm::Set(user_id.clone()),
-                    ..Default::default()
                 })
                 .collect();
 

@@ -294,6 +294,12 @@ fn decode_single_param(data: &str, offset: usize, param_type: &str) -> ((String,
     }
 }
 
+impl Default for MethodSignatureDatabase {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

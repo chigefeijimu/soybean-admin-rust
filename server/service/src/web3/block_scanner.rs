@@ -59,7 +59,7 @@ pub struct ScanResult {
 }
 
 /// Filter for scanning
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ScanFilter {
     pub from_block: u64,
     pub to_block: u64,
@@ -67,19 +67,6 @@ pub struct ScanFilter {
     pub topics: Vec<String>,
     pub from_address: Option<String>,
     pub to_address: Option<String>,
-}
-
-impl Default for ScanFilter {
-    fn default() -> Self {
-        Self {
-            from_block: 0,
-            to_block: 0,
-            addresses: vec![],
-            topics: vec![],
-            from_address: None,
-            to_address: None,
-        }
-    }
 }
 
 /// Cache for block data (simple implementation using HashMap)

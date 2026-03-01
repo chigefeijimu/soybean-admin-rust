@@ -55,7 +55,7 @@ impl SysMenuService {
             pid: menu.pid.clone(),
             menu_type: menu.menu_type.clone(),
             menu_name: menu.menu_name.clone(),
-            icon_type: menu.icon_type.clone(),
+            icon_type: menu.icon_type,
             icon: menu.icon.clone(),
             route_name: menu.route_name.clone(),
             route_path: menu.route_path.clone(),

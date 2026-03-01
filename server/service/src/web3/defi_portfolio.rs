@@ -223,6 +223,12 @@ impl DefiPortfolioService {
     }
 }
 
+impl Default for DefiPortfolioService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

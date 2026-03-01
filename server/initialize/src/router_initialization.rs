@@ -107,7 +107,7 @@ pub async fn initialize_admin_router() -> Router {
     // 初始化验证器
     // 根据是否配置了 Redis 来选择 nonce 存储实现
     let nonce_store_factory =
-        if let Some(_) = crate::redis_initialization::get_primary_redis().await {
+        if crate::redis_initialization::get_primary_redis().await.is_some() {
             // 如果 Redis 可用，使用 Redis 作为 nonce 存储
             project_info!("Using Redis for nonce storage");
             server_core::sign::create_redis_nonce_store_factory("api_key")
@@ -346,10 +346,11 @@ async fn process_collected_routes() {
         .into_iter()
         .map(|route| {
             let resource = route.path.split('/').nth(1).unwrap_or("").to_string();
+            let method_str = route.method.as_str();
             SysEndpoint {
-                id: generate_id(&route.path, &route.method.to_string()),
+                id: generate_id(&route.path, method_str),
                 path: route.path.clone(),
-                method: route.method.to_string(),
+                method: method_str.to_string(),
                 action: "rw".to_string(),
                 resource,
                 controller: route.service_name,

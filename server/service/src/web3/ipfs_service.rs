@@ -126,6 +126,12 @@ impl IpfsService {
     }
 }
 
+impl Default for IpfsService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Generate mock CID
 fn generate_mock_cid() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};

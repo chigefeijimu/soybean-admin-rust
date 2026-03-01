@@ -54,7 +54,7 @@ pub fn encode_address(addr: Address) -> [u8; 32] {
 pub fn encode_uint256(value: U256) -> [u8; 32] {
     // Convert U256 to bytes - simple approach using to_string
     let hex_str = value.to_string();
-    let hex_clean = if hex_str.starts_with("0x") { &hex_str[2..] } else { &hex_str };
+    let hex_clean = hex_str.strip_prefix("0x").unwrap_or(&hex_str);
     
     // Pad to 64 chars (32 bytes)
     let padded = format!("{:0>64}", hex_clean);

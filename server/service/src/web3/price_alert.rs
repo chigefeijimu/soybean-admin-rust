@@ -94,7 +94,7 @@ impl PriceAlertService {
         
         self.alerts
             .entry(user_address.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(alert.clone());
         
         alert
@@ -196,6 +196,12 @@ impl PriceAlertService {
             .filter(|a| !a.triggered)
             .cloned()
             .collect()
+    }
+}
+
+impl Default for PriceAlertService {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

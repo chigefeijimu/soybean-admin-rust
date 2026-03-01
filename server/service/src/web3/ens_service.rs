@@ -93,9 +93,7 @@ impl EnsService {
     /// Check domain availability
     pub fn check_availability(&self, name: &str) -> DomainAvailability {
         // Mock availability check
-        let unavailable = vec![
-            "vitalik", "uniswap", "aave", "ethereum", "maker", "compound", "curve"
-        ];
+        let unavailable = ["vitalik", "uniswap", "aave", "ethereum", "maker", "compound", "curve"];
         
         let name_lower = name.to_lowercase().trim_end_matches(".eth").to_string();
         let available = !unavailable.contains(&name_lower.as_str());

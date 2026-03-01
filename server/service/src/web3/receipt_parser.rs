@@ -334,6 +334,12 @@ pub fn format_gas_info(receipt: &ParsedReceipt) -> String {
     )
 }
 
+impl Default for EventSignatureDatabase {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

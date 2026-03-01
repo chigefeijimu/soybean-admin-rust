@@ -262,7 +262,7 @@ impl Web3Router {
             add_route(route).await;
         }
 
-        let router = Router::new()
+        Router::new()
             // Wallet routes
             .route("/wallet/verify", post(Web3Api::verify_wallet))
             .route("/wallet/list", get(Web3Api::list_wallets))
@@ -306,8 +306,5 @@ impl Web3Router {
             .route("/nft/metadata/{tokenUri}", get(Web3Api::get_nft_metadata))
             .route("/nft/{contract}/owners", post(Web3Api::get_nft_owners_batch))
             .route("/nft/{contract}/details", post(Web3Api::get_nfts))
-            ;
-
-        router
     }
 }
