@@ -24,6 +24,7 @@ pub enum ValidatorType {
     Complex,
 }
 
+#[allow(clippy::type_complexity)]
 static API_KEY_VALIDATORS: Lazy<(
     Arc<RwLock<SimpleApiKeyValidator>>,
     Arc<RwLock<ComplexApiKeyValidator>>,

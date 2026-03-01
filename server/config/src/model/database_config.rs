@@ -38,6 +38,7 @@ pub struct DatabaseConfig {
 /// - APP_DATABASE_INSTANCES_0_DATABASE_URL: 第一个实例数据库URL
 /// - APP_DATABASE_INSTANCES_1_NAME: 第二个实例名称
 /// - APP_DATABASE_INSTANCES_1_DATABASE_URL: 第二个实例数据库URL
+///
 /// 以此类推...
 #[derive(Deserialize, Debug, Clone)]
 pub struct DatabasesInstancesConfig {

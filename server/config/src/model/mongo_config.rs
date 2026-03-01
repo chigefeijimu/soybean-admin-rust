@@ -25,6 +25,7 @@ pub struct MongoConfig {
 /// - APP_MONGO_INSTANCES_0_MONGO_URI: 第一个实例URI
 /// - APP_MONGO_INSTANCES_1_NAME: 第二个实例名称
 /// - APP_MONGO_INSTANCES_1_MONGO_URI: 第二个实例URI
+///
 /// 以此类推...
 #[derive(Debug, Clone, Deserialize)]
 pub struct MongoInstancesConfig {

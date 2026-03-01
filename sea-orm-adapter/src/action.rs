@@ -68,11 +68,11 @@ pub(crate) async fn remove_policies<'conn, 'rule, C: ConnectionTrait>(
     Ok(true)
 }
 
-pub(crate) async fn remove_filtered_policy<'conn, 'rule, C: ConnectionTrait>(
-    conn: &'conn C,
-    ptype: &'rule str,
+pub(crate) async fn remove_filtered_policy<C: ConnectionTrait>(
+    conn: &C,
+    ptype: &str,
     index_of_match_start: usize,
-    rule: Rule<'rule>,
+    rule: Rule<'_>,
 ) -> Result<bool> {
     let base_condition = Condition::all().add(Column::Ptype.eq(ptype));
     let conditions = rule.values[index_of_match_start..]

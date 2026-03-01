@@ -45,7 +45,7 @@ pub fn create_redis_store(prefix: impl Into<String>) -> NonceStore {
 
 /// Creates a factory function for in-memory NonceStore
 pub fn create_memory_store_factory() -> NonceStoreFactory {
-    Arc::new(|| create_memory_store())
+    Arc::new(create_memory_store)
 }
 
 /// Creates a factory function for Redis NonceStore

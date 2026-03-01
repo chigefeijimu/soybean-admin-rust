@@ -115,6 +115,7 @@ where
 {
     type Rejection = Res<String>;
 
+    #[allow(clippy::manual_async_fn)]
     fn from_request(
         req: Request,
         _state: &S,

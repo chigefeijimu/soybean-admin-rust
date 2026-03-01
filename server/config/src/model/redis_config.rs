@@ -56,6 +56,7 @@ pub enum RedisMode {
 /// - APP_REDIS_INSTANCES_1_NAME: 第二个实例名称
 /// - APP_REDIS_INSTANCES_1_REDIS_MODE: 第二个实例模式
 /// - APP_REDIS_INSTANCES_1_REDIS_URL: 第二个实例URL
+///
 /// 以此类推...
 #[derive(Debug, Clone, Deserialize)]
 pub struct RedisInstancesConfig {

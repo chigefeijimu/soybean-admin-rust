@@ -34,6 +34,7 @@ pub struct S3Config {
 /// - APP_S3_INSTANCES_0_S3_ACCESS_KEY_ID: 第一个实例访问密钥ID
 /// - APP_S3_INSTANCES_0_S3_SECRET_ACCESS_KEY: 第一个实例秘密访问密钥
 /// - APP_S3_INSTANCES_0_S3_ENDPOINT: 第一个实例端点URL
+///
 /// 以此类推...
 #[derive(Debug, Clone, Deserialize)]
 pub struct S3InstancesConfig {

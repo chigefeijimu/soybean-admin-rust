@@ -40,6 +40,7 @@ where
 {
     type Rejection = ValidationError;
 
+    #[allow(clippy::manual_async_fn)]
     fn from_request(
         req: Request,
         state: &S,
@@ -50,6 +51,7 @@ where
                 .get(CONTENT_TYPE)
                 .and_then(|value| value.to_str().ok());
 
+            #[allow(clippy::needless_option_as_deref)]
             let data = match content_type.as_deref() {
                 Some(ct) if ct.contains(mime::APPLICATION_JSON.as_ref()) => {
                     let Json(data) = Json::<T>::from_request(req, state)
