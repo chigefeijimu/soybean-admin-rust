@@ -1,5 +1,62 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 19:15 - 本次)
+
+### 本次完成的功能
+1. **技术指标单元测试增强**:
+   - 新增 `test_ema`: 测试 EMA (指数移动平均) 计算
+   - 新增 `test_macd`: 测试 MACD (移动平均收敛/发散) 计算
+   - 新增 `test_bollinger_bands`: 测试布林带计算
+   - 新增 `test_vwap`: 测试 VWAP (成交量加权平均价) 计算
+   - 新增 `test_atr`: 测试 ATR (平均真实波幅) 计算
+   - 新增 `test_full_technical_analysis`: 测试完整技术分析流程
+
+### 代码改动统计
+- 修改: `server/service/src/web3/indicators.rs` (+50行)
+- 总代码量: +50 行
+
+### 验证
+- 后端 `cargo test --package server-service indicators` ✅ (8个测试全部通过)
+- 后端 `cargo clippy --package server-service` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+- [x] NFT查询服务模块 ✅
+- [x] NFT Gallery前端API集成 ✅
+- [x] TypeScript配置优化 ✅
+- [x] 前端代码清理 (移除console语句) ✅
+- [x] Rust Clippy 代码质量优化 ✅
+- [x] K线数据服务 ✅
+- [x] 技术指标服务 (SMA, EMA, RSI, MACD, Bollinger) ✅
+- [x] VWAP 技术指标 ✅
+- [x] ATR 技术指标 ✅
+- [x] 订单管理系统 (基础架构) ✅
+- [x] Swap API端点 ✅
+- [x] **技术指标单元测试增强** ✅ (新增)
+
+### 待解决
+- (无)
+
+---
+
 ## 开发迭代 (2026-03-01 18:50 - 本次)
 
 ### 本次完成的代码质量优化

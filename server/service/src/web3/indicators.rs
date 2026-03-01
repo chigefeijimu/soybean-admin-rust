@@ -412,4 +412,115 @@ mod tests {
         
         assert!(rsi.is_some());
     }
+
+    #[test]
+    fn test_ema() {
+        let service = KLineService::new();
+        let pair = TradingPair {
+            base: "ETH".to_string(),
+            quote: "USDC".to_string(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let candles = service.get_candlesticks(&pair, TimePeriod::OneHour, 50);
+        let ema = IndicatorService::ema(&candles, 12);
+        
+        assert!(!ema.is_empty());
+    }
+
+    #[test]
+    fn test_macd() {
+        let service = KLineService::new();
+        let pair = TradingPair {
+            base: "ETH".to_string(),
+            quote: "USDC".to_string(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let candles = service.get_candlesticks(&pair, TimePeriod::OneHour, 50);
+        let macd = IndicatorService::macd(&candles);
+        
+        assert!(macd.is_some());
+        if let Some(m) = macd {
+            // MACD, signal, and histogram are f64 values
+            assert!(!m.macd.is_nan());
+            assert!(!m.signal.is_nan());
+        }
+    }
+
+    #[test]
+    fn test_bollinger_bands() {
+        let service = KLineService::new();
+        let pair = TradingPair {
+            base: "ETH".to_string(),
+            quote: "USDC".to_string(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let candles = service.get_candlesticks(&pair, TimePeriod::OneHour, 50);
+        let bb = IndicatorService::bollinger_bands(&candles, 20, 2.0);
+        
+        assert!(bb.is_some());
+        if let Some(b) = bb {
+            assert!(b.upper > b.middle);
+            assert!(b.middle > b.lower);
+        }
+    }
+
+    #[test]
+    fn test_vwap() {
+        let service = KLineService::new();
+        let pair = TradingPair {
+            base: "ETH".to_string(),
+            quote: "USDC".to_string(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let candles = service.get_candlesticks(&pair, TimePeriod::OneHour, 50);
+        let vwap = IndicatorService::vwap(&candles);
+        
+        assert!(vwap.is_some());
+    }
+
+    #[test]
+    fn test_atr() {
+        let service = KLineService::new();
+        let pair = TradingPair {
+            base: "ETH".to_string(),
+            quote: "USDC".to_string(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let candles = service.get_candlesticks(&pair, TimePeriod::OneHour, 50);
+        let atr = IndicatorService::atr(&candles, 14);
+        
+        assert!(atr.is_some());
+    }
+
+    #[test]
+    fn test_full_technical_analysis() {
+        let service = KLineService::new();
+        let indicator_service = IndicatorService::new();
+        let pair = TradingPair {
+            base: "ETH".to_string(),
+            quote: "USDC".to_string(),
+            address: None,
+            chain: "ethereum".to_string(),
+        };
+        
+        let candles = service.get_candlesticks(&pair, TimePeriod::OneHour, 100);
+        let analysis = indicator_service.analyze(&candles);
+        
+        assert!(!analysis.ma.is_empty());
+        assert!(analysis.rsi.is_some());
+        assert!(analysis.macd.is_some());
+        assert!(analysis.bollinger.is_some());
+        assert!(analysis.vwap.is_some());
+        assert!(analysis.atr.is_some());
+    }
 }
