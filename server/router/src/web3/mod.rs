@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -338,5 +338,11 @@ impl Web3Router {
             .route("/swap/quote/{from}/{to}/{amount}", get(get_swap_quote))
             .route("/swap/routes/{from}/{to}", get(get_swap_routes))
             .route("/swap/build", post(build_swap_transaction))
+            // Order routes
+            .route("/order", post(create_order))
+            .route("/order/list", get(list_orders))
+            .route("/order/{id}", get(get_order))
+            .route("/order/{id}", put(update_order))
+            .route("/order/{id}", delete(cancel_order))
     }
 }

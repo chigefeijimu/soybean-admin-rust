@@ -17,8 +17,19 @@ pub use server_service::web3::nft::{NFTInfo, NFTService};
 pub use server_service::web3::{KLineService, IndicatorService, Candlestick, TimePeriod, TradingPair, TechnicalAnalysis, VwapData, AtrData};
 pub use server_service::web3::price_fetcher::{PriceService, RealPriceData, CoinSearchResult};
 pub use server_service::web3::swap_service::{SwapService, SwapQuote, SwapTransaction, SwapRoute, TokenSwapInfo};
+pub use server_service::web3::order::{
+    CreateOrderInput, OrderInfo, OrderListFilter, CancelOrderInput,
+    OrderType, OrderSide, OrderStatus, TimeInForce,
+    calculate_slippage, validate_order_input,
+};
 
 use serde::Deserialize;
+use std::sync::Mutex;
+use std::collections::HashMap;
+
+// In-memory order storage (for demo - should use database in production)
+static ORDERS: std::sync::LazyLock<Mutex<HashMap<String, OrderInfo>>> = 
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Input for batch NFT owners query
 #[derive(Debug, Deserialize)]
@@ -1100,5 +1111,204 @@ pub async fn build_swap_transaction(
         "data": tx,
         "msg": "success",
         "success": true
+    }))
+}
+
+// ============ Order API Handlers ============
+
+/// Create a new order
+pub async fn create_order(
+    Json(input): Json<CreateOrderInput>,
+) -> Json<serde_json::Value> {
+    // Validate order input
+    if let Err(e) = validate_order_input(&input) {
+        return Json(serde_json::json!({
+            "code": 400,
+            "msg": format!("Invalid order input: {}", e),
+            "success": false
+        }));
+    }
+
+    // Generate order ID
+    let order_id = format!("ord_{}", uuid::Uuid::new_v4().to_string().replace("-", "")[..16].to_string());
+    
+    // Calculate slippage if not provided
+    let slippage_bps = input.slippage_bps.unwrap_or(50); // Default 0.5%
+
+    let order = OrderInfo {
+        id: order_id.clone(),
+        user_id: input.user_id.clone(),
+        order_type: input.order_type.clone(),
+        side: input.side.clone(),
+        status: OrderStatus::Pending,
+        token_in: input.token_in.clone(),
+        token_out: input.token_out.clone(),
+        amount_in: input.amount_in.clone(),
+        amount_out: None,
+        limit_price: input.limit_price.clone(),
+        stop_price: input.stop_price.clone(),
+        filled_amount: None,
+        average_price: None,
+        time_in_force: input.time_in_force.clone().unwrap_or(TimeInForce::GTC),
+        expire_at: input.expire_at.clone(),
+        chain_id: input.chain_id.unwrap_or(1),
+        slippage_bps: slippage_bps,
+        tx_hash: None,
+        created_at: chrono::Utc::now().to_rfc3339(),
+        updated_at: None,
+    };
+
+    // Store order
+    if let Ok(mut orders) = ORDERS.lock() {
+        orders.insert(order_id.clone(), order.clone());
+    }
+
+    Json(serde_json::json!({
+        "code": 200,
+        "data": order,
+        "msg": "Order created successfully",
+        "success": true
+    }))
+}
+
+/// List orders with filters
+pub async fn list_orders(
+    Query(params): Query<OrderListFilter>,
+) -> Json<serde_json::Value> {
+    let orders = if let Ok(orders) = ORDERS.lock() {
+        let mut result: Vec<OrderInfo> = orders.values().cloned().collect();
+        
+        // Apply filters
+        if let Some(ref user_id) = params.user_id {
+            result.retain(|o| o.user_id.as_ref() == Some(user_id));
+        }
+        if let Some(ref status) = params.status {
+            result.retain(|o| o.status == *status);
+        }
+        if let Some(ref side) = params.side {
+            result.retain(|o| o.side == *side);
+        }
+        if let Some(ref order_type) = params.order_type {
+            result.retain(|o| o.order_type == *order_type);
+        }
+        
+        // Sort by created_at descending
+        result.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        
+        // Apply limit
+        if let Some(limit) = params.limit {
+            result.truncate(limit as usize);
+        }
+        
+        result
+    } else {
+        vec![]
+    };
+
+    Json(serde_json::json!({
+        "code": 200,
+        "data": orders,
+        "msg": "success",
+        "success": true
+    }))
+}
+
+/// Get order by ID
+pub async fn get_order(
+    Path(order_id): Path<String>,
+) -> Json<serde_json::Value> {
+    if let Ok(orders) = ORDERS.lock() {
+        if let Some(order) = orders.get(&order_id) {
+            return Json(serde_json::json!({
+                "code": 200,
+                "data": order,
+                "msg": "success",
+                "success": true
+            }));
+        }
+    }
+
+    Json(serde_json::json!({
+        "code": 404,
+        "msg": "Order not found",
+        "success": false
+    }))
+}
+
+/// Cancel an order
+pub async fn cancel_order(
+    Path(order_id): Path<String>,
+) -> Json<serde_json::Value> {
+    if let Ok(mut orders) = ORDERS.lock() {
+        if let Some(order) = orders.get_mut(&order_id) {
+            if order.status == OrderStatus::Pending || order.status == OrderStatus::Submitted {
+                order.status = OrderStatus::Cancelled;
+                order.updated_at = Some(chrono::Utc::now().to_rfc3339());
+                
+                return Json(serde_json::json!({
+                    "code": 200,
+                    "data": order.clone(),
+                    "msg": "Order cancelled successfully",
+                    "success": true
+                }));
+            } else {
+                return Json(serde_json::json!({
+                    "code": 400,
+                    "msg": "Order cannot be cancelled in current status",
+                    "success": false
+                }));
+            }
+        }
+    }
+
+    Json(serde_json::json!({
+        "code": 404,
+        "msg": "Order not found",
+        "success": false
+    }))
+}
+
+/// Update order (e.g., submit to network)
+pub async fn update_order(
+    Path(order_id): Path<String>,
+    Json(input): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    if let Ok(mut orders) = ORDERS.lock() {
+        if let Some(order) = orders.get_mut(&order_id) {
+            // Update fields
+            if let Some(status) = input.get("status").and_then(|s| s.as_str()) {
+                match status {
+                    "submitted" => order.status = OrderStatus::Submitted,
+                    "filled" => order.status = OrderStatus::Filled,
+                    "failed" => order.status = OrderStatus::Failed,
+                    "expired" => order.status = OrderStatus::Expired,
+                    _ => {}
+                }
+            }
+            if let Some(tx_hash) = input.get("txHash").and_then(|h| h.as_str()) {
+                order.tx_hash = Some(tx_hash.to_string());
+            }
+            if let Some(amount_out) = input.get("amountOut").and_then(|a| a.as_str()) {
+                order.amount_out = Some(amount_out.to_string());
+            }
+            if let Some(filled) = input.get("filledAmount").and_then(|f| f.as_str()) {
+                order.filled_amount = Some(filled.to_string());
+            }
+            
+            order.updated_at = Some(chrono::Utc::now().to_rfc3339());
+            
+            return Json(serde_json::json!({
+                "code": 200,
+                "data": order.clone(),
+                "msg": "Order updated successfully",
+                "success": true
+            }));
+        }
+    }
+
+    Json(serde_json::json!({
+        "code": 404,
+        "msg": "Order not found",
+        "success": false
     }))
 }

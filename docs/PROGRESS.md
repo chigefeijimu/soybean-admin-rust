@@ -1,5 +1,35 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 18:05 - 本次)
+
+### 本次完成的功能
+1. **订单管理 REST API**:
+   - 新增 `POST /web3/order` - 创建订单
+   - 新增 `GET /web3/order/list` - 订单列表查询
+   - 新增 `GET /web3/order/:id` - 获取订单详情
+   - 新增 `PUT /web3/order/:id` - 更新订单状态
+   - 新增 `DELETE /web3/order/:id` - 取消订单
+   - 内存存储实现 (生产环境需替换为数据库)
+
+### 代码改动统计
+- 修改: `server/api/src/web3/mod.rs` (+170行)
+- 修改: `server/router/src/web3/mod.rs` (+6行)
+- 修改: `server/api/Cargo.toml` (+2行)
+- 修改: `Cargo.toml` (+1行)
+- 总代码量: +179 行
+
+### 验证
+- 后端 `cargo check --package server-api` ✅
+- 后端 `cargo check --package server-router` ✅
+
+### 项目状态总结
+- [x] **订单管理 REST API** ✅ (新增)
+
+### 待解决
+- (无)
+
+---
+
 ## 开发迭代 (2026-03-01 17:45 - 本次)
 
 ### 本次完成的功能

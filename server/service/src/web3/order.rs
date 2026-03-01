@@ -6,9 +6,10 @@ use crate::web3::ServiceError;
 use alloy_primitives::U256;
 
 /// Order type enumeration
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum OrderType {
+    #[default]
     Limit,
     Market,
     StopLoss,
@@ -17,30 +18,20 @@ pub enum OrderType {
     TakeProfitLimit,
 }
 
-impl Default for OrderType {
-    fn default() -> Self {
-        OrderType::Limit
-    }
-}
-
 /// Order side (buy/sell)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum OrderSide {
+    #[default]
     Buy,
     Sell,
 }
 
-impl Default for OrderSide {
-    fn default() -> Self {
-        OrderSide::Buy
-    }
-}
-
 /// Order status
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum OrderStatus {
+    #[default]
     Pending,      // Order created, not yet submitted
     Submitted,    // Order submitted to network
     PartiallyFilled,
@@ -50,26 +41,15 @@ pub enum OrderStatus {
     Failed,      // Execution failed
 }
 
-impl Default for OrderStatus {
-    fn default() -> Self {
-        OrderStatus::Pending
-    }
-}
-
 /// Time in force (validity period)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum TimeInForce {
+    #[default]
     GTC,  // Good Till Cancel
     IOC,  // Immediate Or Cancel
     FOK,  // Fill Or Kill
     GTD,  // Good Till Date
-}
-
-impl Default for TimeInForce {
-    fn default() -> Self {
-        TimeInForce::GTC
-    }
 }
 
 /// Order input for creating a new order
@@ -192,7 +172,7 @@ pub fn validate_order_input(input: &CreateOrderInput) -> Result<(), ServiceError
     
     // Validate slippage (0-10000 bps = 0-100%)
     if let Some(slippage) = input.slippage_bps {
-        if slippage < 0 || slippage > 10000 {
+        if !(0..=10000).contains(&slippage) {
             return Err(ServiceError::new("slippage_bps must be 0-10000"));
         }
     }
