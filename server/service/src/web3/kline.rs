@@ -47,6 +47,7 @@ impl TimePeriod {
         }
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "1m" => Some(Self::OneMinute),
@@ -73,6 +74,12 @@ pub struct TradingPair {
 /// K-Line service
 pub struct KLineService {
     max_candlesticks: usize,
+}
+
+impl Default for KLineService {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl KLineService {
@@ -146,7 +153,6 @@ impl KLineService {
     }
 
     /// Generate a mock candlestick
-    #[allow(clippy::non_snake_case)]
     fn generate_candlestick(&self, timestamp: u64, _period_secs: u64, base_price: f64) -> Candlestick {
         // Add some randomness to simulate price movement
         let variation = rand_simple() * 0.02 - 0.01; // -1% to +1%

@@ -51,6 +51,12 @@ pub struct TechnicalAnalysis {
 /// Technical Indicator Service
 pub struct IndicatorService;
 
+impl Default for IndicatorService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IndicatorService {
     pub fn new() -> Self {
         Self
@@ -97,15 +103,15 @@ impl IndicatorService {
         });
         
         // Calculate subsequent EMAs
-        for i in period as usize..candles.len() {
-            let close = candles[i].close;
+        for candle in candles.iter().skip(period as usize) {
+            let close = candle.close;
             let prev_ema = ema_values.last().unwrap().value;
             let ema = (close - prev_ema) * multiplier + prev_ema;
             
             ema_values.push(MovingAverage {
                 period,
                 value: ema,
-                timestamp: candles[i].timestamp,
+                timestamp: candle.timestamp,
             });
         }
         

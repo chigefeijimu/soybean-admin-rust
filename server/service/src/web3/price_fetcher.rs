@@ -48,6 +48,12 @@ pub struct PriceService {
     coin_map: HashMap<String, String>, // symbol -> coinGecko id
 }
 
+impl Default for PriceService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PriceService {
     pub fn new() -> Self {
         let mut coin_map = HashMap::new();
