@@ -1,5 +1,60 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 17:31 - 本次)
+
+### 本次完成的功能
+1. **新增技术指标: VWAP 和 ATR**:
+   - 新增 `VwapData` 结构体 - 成交量加权平均价
+   - 新增 `AtrData` 结构体 - 平均真实波幅
+   - 新增 `vwap()` 计算方法 - 基于典型价格和成交量
+   - 新增 `atr()` 计算方法 - 使用Wilder平滑算法
+   - 更新 `TechnicalAnalysis` 包含新的指标数据
+   - 更新服务层和API层导出
+
+### 代码改动统计
+- 修改: `server/service/src/web3/indicators.rs` (+100行)
+- 修改: `server/service/src/web3/mod.rs` (+1行)
+- 修改: `server/api/src/web3/mod.rs` (+1行)
+- 总代码量: +101 行
+
+### 验证
+- 后端 `cargo check` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+- [x] NFT查询服务模块 ✅
+- [x] NFT Gallery前端API集成 ✅
+- [x] TypeScript配置优化 ✅
+- [x] 前端代码清理 (移除console语句) ✅
+- [x] Rust Clippy 代码质量优化 ✅
+- [x] K线数据服务 ✅
+- [x] 技术指标服务 (SMA, EMA, RSI, MACD, Bollinger) ✅
+- [x] **VWAP 技术指标** ✅ (新增)
+- [x] **ATR 技术指标** ✅ (新增)
+
+### 待解决
+- (无)
+
+---
+
 ## 开发迭代 (2026-03-01 17:05 - 本次)
 
 ### 本次完成的功能
