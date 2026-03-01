@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order, search_tokens, get_token_analytics, get_token_holders, get_token_transfers, get_price_history, get_analytics_summary, get_holder_distribution, get_token_security};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -433,5 +433,14 @@ impl Web3Router {
             .route("/gas/by-day-of-week", get(Web3Api::get_gas_by_day_of_week))
             .route("/gas/suggestions", get(Web3Api::get_gas_suggestions))
             .route("/gas/compare", get(Web3Api::compare_gas_periods))
+            // Token Analytics routes
+            .route("/token/search", post(search_tokens))
+            .route("/token/analytics", post(get_token_analytics))
+            .route("/token/holders", post(get_token_holders))
+            .route("/token/transfers", post(get_token_transfers))
+            .route("/token/price-history", post(get_price_history))
+            .route("/token/summary", get(get_analytics_summary))
+            .route("/token/{address}/distribution", get(get_holder_distribution))
+            .route("/token/{address}/security", get(get_token_security))
     }
 }

@@ -27,6 +27,10 @@ pub mod bridge;
 pub mod batch_transfer;
 pub mod address_book;
 pub mod gas_analytics;
+pub mod token_analytics;
+
+// Re-export TokenAnalyticsService
+pub use token_analytics::TokenAnalyticsService;
 
 use async_trait::async_trait;
 use chrono::Local;

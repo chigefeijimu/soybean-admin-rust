@@ -39,6 +39,14 @@ pub use server_service::web3::gas_analytics::{
     GasComparisonInput, GasComparisonResult,
     GasOptimizationSuggestion,
 };
+pub use server_service::web3::token_analytics::{
+    TokenAnalytics, TokenHolder, TokenTransfer, TokenPair,
+    PricePoint, TokenSecurity, TokenMetadata, AnalyticsSummary,
+    TokenSearchInput, GetTokenAnalyticsInput, GetTokenHoldersInput,
+    GetTokenTransfersInput, GetPriceHistoryInput, CompareTokensInput,
+    TokenComparison, TokenSentiment, HolderDistribution,
+    TokenTreasury, TreasuryToken, HistoricalSnapshot,
+};
 
 use serde::Deserialize;
 use std::sync::Mutex;
@@ -2071,5 +2079,183 @@ impl Web3Api {
                 "success": false
             }))),
         }
+    }
+}
+
+// ============ Token Analytics API ============
+
+use server_service::web3::token_analytics::TokenAnalyticsService;
+
+/// Search tokens
+pub async fn search_tokens(
+    Json(input): Json<TokenSearchInput>,
+) -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.search_tokens(input).await {
+        Ok(tokens) => Json(serde_json::json!({
+            "code": 200,
+            "data": tokens,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
+    }
+}
+
+/// Get token analytics
+pub async fn get_token_analytics(
+    Json(input): Json<GetTokenAnalyticsInput>,
+) -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.get_token_analytics(input).await {
+        Ok(analytics) => Json(serde_json::json!({
+            "code": 200,
+            "data": analytics,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
+    }
+}
+
+/// Get token holders
+pub async fn get_token_holders(
+    Json(input): Json<GetTokenHoldersInput>,
+) -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.get_token_holders(input).await {
+        Ok(holders) => Json(serde_json::json!({
+            "code": 200,
+            "data": holders,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
+    }
+}
+
+/// Get token transfers
+pub async fn get_token_transfers(
+    Json(input): Json<GetTokenTransfersInput>,
+) -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.get_token_transfers(input).await {
+        Ok(transfers) => Json(serde_json::json!({
+            "code": 200,
+            "data": transfers,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
+    }
+}
+
+/// Get price history
+pub async fn get_price_history(
+    Json(input): Json<GetPriceHistoryInput>,
+) -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.get_price_history(input).await {
+        Ok(history) => Json(serde_json::json!({
+            "code": 200,
+            "data": history,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
+    }
+}
+
+/// Get analytics summary
+pub async fn get_analytics_summary() -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.get_analytics_summary().await {
+        Ok(summary) => Json(serde_json::json!({
+            "code": 200,
+            "data": summary,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
+    }
+}
+
+/// Get holder distribution
+pub async fn get_holder_distribution(
+    Path(address): Path<String>,
+) -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.get_holder_distribution(&address).await {
+        Ok(dist) => Json(serde_json::json!({
+            "code": 200,
+            "data": dist,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
+    }
+}
+
+/// Get token security info
+pub async fn get_token_security(
+    Path(address): Path<String>,
+) -> Json<serde_json::Value> {
+    let service = TokenAnalyticsService::new();
+    
+    match service.get_token_security(&address).await {
+        Ok(security) => Json(serde_json::json!({
+            "code": 200,
+            "data": security,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.to_string(),
+            "success": false
+        })),
     }
 }
