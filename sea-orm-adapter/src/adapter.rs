@@ -209,7 +209,7 @@ mod tests {
         any(feature = "runtime-actix-native-tls", feature = "runtime-actix-rustls"),
         actix_rt::test
     )]
-    #[ignore = "known issue with sea-orm-adapter library - remove_filtered_policy fails"]
+    #[ignore = "sea-orm-adapter UnpackInsertId bug - requires library fix"]
     async fn test_adapter() {
         use casbin::prelude::*;
 
