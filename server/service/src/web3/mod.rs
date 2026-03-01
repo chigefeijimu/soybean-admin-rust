@@ -21,6 +21,7 @@ pub mod kline;
 pub mod indicators;
 pub mod price_fetcher;
 pub mod order;
+pub mod bridge;
 
 use async_trait::async_trait;
 use chrono::Local;

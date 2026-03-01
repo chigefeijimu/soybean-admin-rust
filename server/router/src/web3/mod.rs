@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -269,6 +269,46 @@ impl Web3Router {
             ),
         ];
 
+        // Bridge routes
+        let bridge_routes = vec![
+            RouteInfo::new(
+                &format!("{}/bridge/chains", base_path),
+                Method::GET,
+                "Web3BridgeApi",
+                "Get supported chains for bridging",
+            ),
+            RouteInfo::new(
+                &format!("{}/bridge/tokens/:chainId", base_path),
+                Method::GET,
+                "Web3BridgeApi",
+                "Get bridge tokens for chain",
+            ),
+            RouteInfo::new(
+                &format!("{}/bridge/protocols", base_path),
+                Method::GET,
+                "Web3BridgeApi",
+                "Get supported bridge protocols",
+            ),
+            RouteInfo::new(
+                &format!("{}/bridge/quote", base_path),
+                Method::GET,
+                "Web3BridgeApi",
+                "Get bridge quote",
+            ),
+            RouteInfo::new(
+                &format!("{}/bridge/build", base_path),
+                Method::POST,
+                "Web3BridgeApi",
+                "Build bridge transaction",
+            ),
+            RouteInfo::new(
+                &format!("{}/bridge/history", base_path),
+                Method::GET,
+                "Web3BridgeApi",
+                "Get bridge history",
+            ),
+        ];
+
         // Add all routes
         for route in wallet_routes.into_iter()
             .chain(contract_routes.into_iter())
@@ -277,6 +317,7 @@ impl Web3Router {
             .chain(key_routes.into_iter()) 
             .chain(block_scanner_routes.into_iter())
             .chain(nft_routes.into_iter())
+            .chain(bridge_routes.into_iter())
         {
             add_route(route).await;
         }
@@ -344,5 +385,12 @@ impl Web3Router {
             .route("/order/{id}", get(get_order))
             .route("/order/{id}", put(update_order))
             .route("/order/{id}", delete(cancel_order))
+            // Bridge routes
+            .route("/bridge/chains", get(Web3BridgeApi::get_chains))
+            .route("/bridge/tokens/{chainId}", get(Web3BridgeApi::get_tokens))
+            .route("/bridge/protocols", get(Web3BridgeApi::get_protocols))
+            .route("/bridge/quote", get(Web3BridgeApi::get_quote))
+            .route("/bridge/build", post(Web3BridgeApi::build_transaction))
+            .route("/bridge/history", get(Web3BridgeApi::get_history))
     }
 }

@@ -22,6 +22,11 @@ pub use server_service::web3::order::{
     OrderType, OrderSide, OrderStatus, TimeInForce,
     calculate_slippage, validate_order_input,
 };
+pub use server_service::web3::bridge::{
+    ChainInfo, TokenInfo, BridgeQuote, BridgeTransaction, BridgeProtocol,
+    BridgeTransactionRequest, get_supported_chains, get_bridge_tokens, get_bridge_protocols,
+};
+pub use server_service::web3::bridge;
 
 use serde::Deserialize;
 use std::sync::Mutex;
@@ -1311,4 +1316,229 @@ pub async fn update_order(
         "msg": "Order not found",
         "success": false
     }))
+}
+
+// ============ Bridge API ============
+
+/// Bridge API endpoints
+pub struct Web3BridgeApi;
+
+impl Web3BridgeApi {
+    /// Get supported chains for bridging
+    pub async fn get_chains() -> Json<serde_json::Value> {
+        let chains = get_supported_chains();
+        Json(serde_json::json!({
+            "code": 200,
+            "data": chains,
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Get bridge tokens for a specific chain
+    pub async fn get_tokens(
+        Path(chain_id): Path<u64>,
+    ) -> Json<serde_json::Value> {
+        let tokens = get_bridge_tokens(chain_id);
+        Json(serde_json::json!({
+            "code": 200,
+            "data": tokens,
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Get supported bridge protocols
+    pub async fn get_protocols() -> Json<serde_json::Value> {
+        let protocols = get_bridge_protocols();
+        Json(serde_json::json!({
+            "code": 200,
+            "data": protocols,
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Get bridge quote
+    pub async fn get_quote(
+        Query(params): Query<std::collections::HashMap<String, String>>,
+    ) -> Json<serde_json::Value> {
+        let from_chain_id = params.get("fromChain")
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(1);
+        let to_chain_id = params.get("toChain")
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(137);
+        let from_token = params.get("fromToken").cloned().unwrap_or_else(|| "ETH".to_string());
+        let to_token = params.get("toToken").cloned().unwrap_or_else(|| "MATIC".to_string());
+        let amount = params.get("amount").cloned().unwrap_or_else(|| "1".to_string());
+
+        let chains = get_supported_chains();
+        let from_chain = chains.iter().find(|c| c.id == from_chain_id).cloned();
+        let to_chain = chains.iter().find(|c| c.id == to_chain_id).cloned();
+
+        if from_chain.is_none() || to_chain.is_none() {
+            return Json(serde_json::json!({
+                "code": 400,
+                "data": null,
+                "msg": "Invalid chain ID",
+                "success": false
+            }));
+        }
+
+        let from_chain = from_chain.unwrap();
+        let to_chain = to_chain.unwrap();
+
+        let from_tokens = get_bridge_tokens(from_chain_id);
+        let to_tokens = get_bridge_tokens(to_chain_id);
+
+        let from_token_info = from_tokens.iter().find(|t| t.symbol == from_token).cloned();
+        let to_token_info = to_tokens.iter().find(|t| t.symbol == to_token).cloned();
+
+        if from_token_info.is_none() || to_token_info.is_none() {
+            return Json(serde_json::json!({
+                "code": 400,
+                "data": null,
+                "msg": "Invalid token",
+                "success": false
+            }));
+        }
+
+        let from_token_info = from_token_info.unwrap();
+        let to_token_info = to_token_info.unwrap();
+
+        // Simulate quote calculation (in production, would query actual bridge APIs)
+        let exchange_rate = if from_token == to_token { "1.0".to_string() } else { "0.85".to_string() };
+        let to_amount = (amount.parse::<f64>().unwrap_or(1.0) * exchange_rate.parse::<f64>().unwrap_or(0.85)).to_string();
+        
+        let quote = BridgeQuote {
+            from_chain: from_chain.clone(),
+            to_chain: to_chain.clone(),
+            from_token: from_token_info.clone(),
+            to_token: to_token_info.clone(),
+            from_amount: amount.clone(),
+            to_amount: to_amount.clone(),
+            exchange_rate: exchange_rate.clone(),
+            estimated_time: "5-15 min".to_string(),
+            estimated_gas: "0.002 ETH".to_string(),
+            bridge_fee: "0.001 ETH".to_string(),
+            protocol: "LayerZero".to_string(),
+            route: vec![
+                crate::web3::bridge::BridgeStep {
+                    step_type: "send".to_string(),
+                    protocol: "LayerZero".to_string(),
+                    description: "Send tokens to LayerZero bridge".to_string(),
+                },
+                crate::web3::bridge::BridgeStep {
+                    step_type: "receive".to_string(),
+                    protocol: "LayerZero".to_string(),
+                    description: "Receive tokens on destination chain".to_string(),
+                },
+            ],
+        };
+
+        Json(serde_json::json!({
+            "code": 200,
+            "data": quote,
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Build bridge transaction
+    pub async fn build_transaction(
+        Json(input): Json<BridgeTransactionRequest>,
+    ) -> Json<serde_json::Value> {
+        let chains = get_supported_chains();
+        let from_chain = chains.iter().find(|c| c.id == input.from_chain_id).cloned();
+        let to_chain = chains.iter().find(|c| c.id == input.to_chain_id).cloned();
+
+        if from_chain.is_none() || to_chain.is_none() {
+            return Json(serde_json::json!({
+                "code": 400,
+                "data": null,
+                "msg": "Invalid chain ID",
+                "success": false
+            }));
+        }
+
+        let from_chain = from_chain.unwrap();
+        let to_chain = to_chain.unwrap();
+
+        let from_tokens = get_bridge_tokens(input.from_chain_id);
+        let to_tokens = get_bridge_tokens(input.to_chain_id);
+
+        let from_token_info = from_tokens.iter().find(|t| t.symbol == input.from_token).cloned();
+        let to_token_info = to_tokens.iter().find(|t| t.symbol == input.to_token).cloned();
+
+        if from_token_info.is_none() || to_token_info.is_none() {
+            return Json(serde_json::json!({
+                "code": 400,
+                "data": null,
+                "msg": "Invalid token",
+                "success": false
+            }));
+        }
+
+        let from_token_info = from_token_info.unwrap();
+        let to_token_info = to_token_info.unwrap();
+
+        let exchange_rate = if input.from_token == input.to_token { "1.0" } else { "0.85" };
+        let to_amount = (input.amount.parse::<f64>().unwrap_or(1.0) * exchange_rate.parse::<f64>().unwrap_or(0.85)).to_string();
+
+        let quote = BridgeQuote {
+            from_chain: from_chain.clone(),
+            to_chain: to_chain.clone(),
+            from_token: from_token_info.clone(),
+            to_token: to_token_info.clone(),
+            from_amount: input.amount.clone(),
+            to_amount: to_amount.clone(),
+            exchange_rate: exchange_rate.to_string(),
+            estimated_time: "5-15 min".to_string(),
+            estimated_gas: "0.002 ETH".to_string(),
+            bridge_fee: "0.001 ETH".to_string(),
+            protocol: "LayerZero".to_string(),
+            route: vec![],
+        };
+
+        // Build transaction data (simulated - in production would call actual bridge API)
+        let tx_data = crate::web3::bridge::TransactionData {
+            to: "0x0000000000000000000000000000000000000000".to_string(),
+            data: "0x".to_string(),
+            value: input.amount.clone(),
+            gas_limit: "210000".to_string(),
+            gas_price: None,
+        };
+
+        let transaction = BridgeTransaction {
+            quote,
+            tx_data,
+            approval_address: Some("0x0000000000000000000000000000000000000001".to_string()),
+        };
+
+        Json(serde_json::json!({
+            "code": 200,
+            "data": transaction,
+            "msg": "success",
+            "success": true
+        }))
+    }
+
+    /// Get bridge history for a wallet
+    pub async fn get_history(
+        Query(params): Query<std::collections::HashMap<String, String>>,
+    ) -> Json<serde_json::Value> {
+        let address = params.get("address").cloned().unwrap_or_default();
+        
+        // Return empty history (in production would query database)
+        let history: Vec<crate::web3::bridge::BridgeHistory> = vec![];
+
+        Json(serde_json::json!({
+            "code": 200,
+            "data": history,
+            "msg": "success",
+            "success": true,
+            "address": address
+        }))
+    }
 }
