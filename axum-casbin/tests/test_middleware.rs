@@ -3,9 +3,8 @@ use std::{
     task::{Context, Poll},
 };
 
-use axum::{response::Response, routing::get, BoxError, Router};
+use axum::{body::Body, response::Response, routing::get, BoxError, Router};
 use axum_casbin::{CasbinAxumLayer, CasbinVals};
-use axum_test_helpers::TestClient;
 use bytes::Bytes;
 use casbin::{function_map::key_match2, CoreApi, DefaultModel, FileAdapter};
 use futures::future::BoxFuture;
@@ -42,7 +41,6 @@ where
     ResBody::Error: Into<BoxError>,
 {
     type Error = S::Error;
-    // `BoxFuture` is a type alias for `Pin<Box<dyn Future + Send + 'a>>`
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
     type Response = S::Response;
 
@@ -65,8 +63,44 @@ where
     }
 }
 
-// Handler that immediately returns an empty `200 OK` response.
 async fn handler() {}
+
+struct TestClient {
+    app: Router,
+}
+
+impl TestClient {
+    fn new(app: Router) -> Self {
+        Self { app }
+    }
+
+    async fn get(&mut self, uri: &str) -> TestResponse {
+        let request = Request::builder()
+            .uri(uri)
+            .body(Body::empty())
+            .unwrap();
+
+        let mut app = std::mem::replace(&mut self.app, Router::new());
+        
+        let response: Response = <Router as tower::ServiceExt<Request<Body>>>::ready(&mut app).await.unwrap().call(request).await.unwrap();
+        
+        self.app = app;
+
+        TestResponse {
+            status: response.status(),
+        }
+    }
+}
+
+struct TestResponse {
+    status: StatusCode,
+}
+
+impl TestResponse {
+    fn status(&self) -> StatusCode {
+        self.status
+    }
+}
 
 #[cfg_attr(feature = "runtime-tokio", tokio::test)]
 #[cfg_attr(feature = "runtime-async-std", async_std::test)]
@@ -89,18 +123,18 @@ async fn test_middleware() {
     let app = Router::new()
         .route("/pen/1", get(handler))
         .route("/pen/2", get(handler))
-        .route("/book/:id", get(handler))
+        .route("/book/{id}", get(handler))
         .layer(casbin_middleware)
         .layer(FakeAuthLayer);
 
-    let client = TestClient::new(app);
+    let mut client = TestClient::new(app);
 
-    let resp_pen_1 = client.get("/pen/1").await;
+    let resp_pen_1: TestResponse = client.get("/pen/1").await;
     assert_eq!(resp_pen_1.status(), StatusCode::OK);
 
-    let resp_book = client.get("/book/2").await;
+    let resp_book: TestResponse = client.get("/book/2").await;
     assert_eq!(resp_book.status(), StatusCode::OK);
 
-    let resp_pen_2 = client.get("/pen/2").await;
+    let resp_pen_2: TestResponse = client.get("/pen/2").await;
     assert_eq!(resp_pen_2.status(), StatusCode::FORBIDDEN);
 }

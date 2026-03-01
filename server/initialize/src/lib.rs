@@ -30,7 +30,7 @@ mod redis_initialization;
 mod router_initialization;
 mod server_initialization;
 
-// TODO: axum_test_helpers不兼容axum 0.8.x
+// axum-test-helpers不兼容axum 0.8.x，已移除依赖，改用tower::ServiceExt自定义测试客户端
 // #[cfg(test)]
 // mod tests {
 //     use std::{
