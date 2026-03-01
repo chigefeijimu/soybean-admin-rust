@@ -175,7 +175,12 @@ impl EventSignatureDatabase {
     
     /// Look up an event by its signature (topic[0])
     pub fn lookup(&self, signature: &str) -> Option<&EventInfo> {
-        self.signatures.get(signature)
+        // Try both with and without 0x prefix
+        if let Some(stripped) = signature.strip_prefix("0x") {
+            self.signatures.get(stripped).or_else(|| self.signatures.get(signature))
+        } else {
+            self.signatures.get(signature)
+        }
     }
 }
 

@@ -37,6 +37,9 @@ pbkdf2 = "0.12"
 sha2 = "0.10"
 rand = "0.8"
 
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+
 [features]
 default = ["debug-print"]
 debug-print = ["sea-orm/debug-print"]

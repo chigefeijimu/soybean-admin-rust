@@ -153,14 +153,15 @@ mod tests {
 
     #[test]
     fn test_encode_address() {
-        let addr = Address::from_low_u64_be(0x1234567890abcdef1234567890abcdef12345678);
+        let addr = Address::from_slice(&[0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78]);
         let encoded = encode_address(addr);
-        assert_eq!(encoded[12..], addr.as_slice());
+        assert_eq!(&encoded[12..], addr.as_slice());
     }
 
     #[test]
     fn test_parse_address() {
         let addr = parse_address("0x1234567890abcdef1234567890abcdef12345678").unwrap();
-        assert_eq!(addr, Address::from_low_u64_be(0x1234567890abcdef1234567890abcdef12345678));
+        let expected = Address::from_slice(&[0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78]);
+        assert_eq!(addr, expected);
     }
 }

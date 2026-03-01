@@ -1,5 +1,61 @@
 # Web3 项目进度
 
+## 开发迭代 (2026-03-01 13:41 - 本次)
+
+### 本次完成的功能
+1. **新增 Web3 服务集成测试**:
+   - 新增 `server/service/tests/web3_erc20.rs` - ERC20 工具模块测试
+   - 测试用例: encode_address, encode_uint256, format_balance, erc20_selectors, erc20_call_builder
+
+2. **修复现有测试Bug**:
+   - 修复 `ipfs_service.rs`: generate_mock_cid 函数处理短时间戳时的越界问题
+   - 修复 `receipt_parser.rs`: lookup 函数增加 0x 前缀兼容处理
+
+### 代码改动统计
+- 新增: `server/service/tests/web3_erc20.rs` (~110行)
+- 修改: `server/service/src/web3/ipfs_service.rs` (+5行)
+- 修改: `server/service/src/web3/receipt_parser.rs` (+5行)
+- 修改: `server/service/Cargo.toml` (+3行 dev-dependencies)
+- 总代码量: +123 行
+
+### 验证
+- 后端 `cargo check` ✅
+- 后端 `cargo test` ✅ (28个测试全部通过)
+- 前端 `pnpm build` ✅
+- 前端 `pnpm lint` ✅
+
+### 项目状态总结
+- [x] Wallet CRUD + EIP-191签名验证 ✅
+- [x] Contract CRUD ✅
+- [x] Transaction CRUD ✅
+- [x] Alloy Provider (HTTP JSON-RPC) ✅
+- [x] ERC20工具模块 ✅
+- [x] 合约调用实现 (JSON-RPC) ✅
+- [x] CoinGecko价格预言机 ✅
+- [x] 交易回执解析API ✅
+- [x] 批量代币余额查询 ✅
+- [x] 前端交易历史组件API集成 ✅
+- [x] 前端PortfolioDashboard价格API集成 ✅
+- [x] 前端ContractCall组件API集成 ✅
+- [x] 真实Gas价格API (EIP-1559) ✅
+- [x] Redis缓存层 ✅
+- [x] 私钥管理 (AES-256-GCM) ✅
+- [x] 区块扫描服务模块 ✅
+- [x] 前端区块浏览器组件 ✅
+- [x] 前端区块浏览器集成到主页面 ✅
+- [x] TypeScript类型定义增强 ✅
+- [x] NFT查询服务模块 ✅
+- [x] NFT Gallery前端API集成 ✅
+- [x] TypeScript配置优化 ✅
+- [x] 前端代码清理 (移除console语句) ✅
+- [x] Rust Clippy 代码质量优化 ✅
+- [x] **集成测试** ✅ (新增)
+
+### 待解决
+- (无)
+
+---
+
 ## 开发迭代 (2026-03-01 12:53 - 本次)
 
 ### 本次完成的功能

@@ -139,7 +139,12 @@ fn generate_mock_cid() -> String {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    format!("Qm{:x}", timestamp)[..59].to_string()
+    let cid = format!("Qm{:x}", timestamp);
+    if cid.len() >= 59 {
+        cid[..59].to_string()
+    } else {
+        cid
+    }
 }
 
 /// NFT metadata standard
