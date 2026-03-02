@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order, search_tokens, get_token_analytics, get_token_holders, get_token_transfers, get_price_history, get_analytics_summary, get_holder_distribution, get_token_security, get_top_yields, get_yield_protocols, analyze_yield_portfolio, get_yield_opportunities, compare_yield_tokens};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, Web3OracleApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order, search_tokens, get_token_analytics, get_token_holders, get_token_transfers, get_price_history, get_analytics_summary, get_holder_distribution, get_token_security, get_top_yields, get_yield_protocols, analyze_yield_portfolio, get_yield_opportunities, compare_yield_tokens, compare_multiple};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -331,6 +331,34 @@ impl Web3Router {
             ),
         ];
 
+        // Oracle Price Comparison routes
+        let oracle_routes = vec![
+            RouteInfo::new(
+                &format!("{}/oracle/compare/{{symbol}}", base_path),
+                Method::GET,
+                "Web3OracleApi",
+                "Compare prices from multiple oracles",
+            ),
+            RouteInfo::new(
+                &format!("{}/oracle/multi", base_path),
+                Method::POST,
+                "Web3OracleApi",
+                "Compare prices for multiple symbols",
+            ),
+            RouteInfo::new(
+                &format!("{}/oracle/status", base_path),
+                Method::GET,
+                "Web3OracleApi",
+                "Get oracle status",
+            ),
+            RouteInfo::new(
+                &format!("{}/oracle/supported", base_path),
+                Method::GET,
+                "Web3OracleApi",
+                "Get supported tokens for oracle comparison",
+            ),
+        ];
+
         // Add all routes
         for route in wallet_routes.into_iter()
             .chain(contract_routes.into_iter())
@@ -341,6 +369,7 @@ impl Web3Router {
             .chain(nft_routes.into_iter())
             .chain(bridge_routes.into_iter())
             .chain(approval_routes.into_iter())
+            .chain(oracle_routes.into_iter())
         {
             add_route(route).await;
         }
@@ -448,5 +477,10 @@ impl Web3Router {
             .route("/yield/analyze", post(analyze_yield_portfolio))
             .route("/yield/opportunities/{walletAddress}", get(get_yield_opportunities))
             .route("/yield/compare", post(compare_yield_tokens))
+            // Oracle Price Comparison routes
+            .route("/oracle/compare/{symbol}", get(Web3OracleApi::compare_prices))
+            .route("/oracle/multi", post(compare_multiple))
+            .route("/oracle/status", get(Web3OracleApi::get_oracle_status))
+            .route("/oracle/supported", get(Web3OracleApi::get_supported_tokens))
     }
 }

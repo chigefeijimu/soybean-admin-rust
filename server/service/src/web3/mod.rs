@@ -29,6 +29,12 @@ pub mod address_book;
 pub mod gas_analytics;
 pub mod token_analytics;
 pub mod yield_optimizer;
+pub mod oracle_price;
+
+pub use oracle_price::{
+    OraclePriceService, TOraclePriceService, OraclePrice, PriceComparison,
+    OracleConfig, ChainlinkFeed, OracleStatus, TokenConfig, create_oracle_price_service,
+};
 
 // Re-export TokenAnalyticsService
 pub use token_analytics::TokenAnalyticsService;

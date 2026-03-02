@@ -52,6 +52,11 @@ pub use server_service::web3::yield_optimizer::{
     YieldOpportunity, YieldPoolInfo, YieldProtocolInfo, 
     PortfolioPosition, YieldOptimizationResult, OptimizeInput,
 };
+pub use server_service::web3::oracle_price::{
+    OraclePriceService, TOraclePriceService, OraclePrice, PriceComparison,
+    OracleConfig, ChainlinkFeed, OracleStatus, TokenConfig,
+    create_oracle_price_service,
+};
 
 use serde::Deserialize;
 use std::sync::Mutex;
@@ -2391,4 +2396,109 @@ pub async fn compare_yield_tokens(
 pub struct YieldCompareInput {
     pub tokens: Vec<String>,
     pub amount: f64,
+}
+
+// ============ Oracle Price Comparison API ============
+
+pub struct Web3OracleApi;
+
+impl Web3OracleApi {
+    /// Compare prices from multiple oracles for a single symbol
+    pub async fn compare_prices(
+        Path(symbol): Path<String>,
+    ) -> Json<serde_json::Value> {
+        let service = create_oracle_price_service();
+        
+        match service.compare_prices(&symbol).await {
+            Ok(comparison) => Json(serde_json::json!({
+                "code": 200,
+                "data": comparison,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            })),
+        }
+    }
+
+    /// Get oracle status
+    pub async fn get_oracle_status() -> Json<serde_json::Value> {
+        let service = create_oracle_price_service();
+        
+        match service.get_oracle_status().await {
+            Ok(status) => Json(serde_json::json!({
+                "code": 200,
+                "data": status,
+                "msg": "success",
+                "success": true
+            })),
+            Err(e) => Json(serde_json::json!({
+                "code": 500,
+                "data": null,
+                "msg": e.message,
+                "success": false
+            })),
+        }
+    }
+
+    /// Get supported tokens for oracle comparison
+    pub async fn get_supported_tokens() -> Json<serde_json::Value> {
+        let tokens = serde_json::json!([
+            {"symbol": "BTC", "name": "Bitcoin", "chainlink": true, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "ETH", "name": "Ethereum", "chainlink": true, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "LINK", "name": "Chainlink", "chainlink": true, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "BNB", "name": "BNB", "chainlink": true, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "SOL", "name": "Solana", "chainlink": true, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "XRP", "name": "XRP", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "ADA", "name": "Cardano", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "DOGE", "name": "Dogecoin", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "AVAX", "name": "Avalanche", "chainlink": true, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "DOT", "name": "Polkadot", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "MATIC", "name": "Polygon", "chainlink": true, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "UNI", "name": "Uniswap", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "AAVE", "name": "Aave", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "MKR", "name": "Maker", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+            {"symbol": "CRV", "name": "Curve DAO", "chainlink": false, "binance": true, "coingecko": true, "uniswap": true},
+        ]);
+        
+        Json(serde_json::json!({
+            "code": 200,
+            "data": tokens,
+            "msg": "success",
+            "success": true
+        }))
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MultiSymbolInput {
+    pub symbols: Vec<String>,
+}
+
+/// Compare prices for multiple symbols
+pub async fn compare_multiple(
+    Json(input): Json<MultiSymbolInput>,
+) -> Json<serde_json::Value> {
+    let service = create_oracle_price_service();
+    let symbols: Vec<&str> = input.symbols.iter().map(|s| s.as_str()).collect();
+    
+    match service.get_multi_symbol_comparison(&symbols).await {
+        Ok(comparisons) => Json(serde_json::json!({
+            "code": 200,
+            "data": comparisons,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e.message,
+            "success": false
+        })),
+    }
 }
