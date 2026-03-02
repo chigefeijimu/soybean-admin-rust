@@ -58,6 +58,11 @@ pub use server_service::web3::oracle_price::{
     create_oracle_price_service,
 };
 
+pub use server_service::web3::transaction_failure_analyzer::{
+    TransactionFailureAnalysis, FailureStatistics, FailureType, Severity, Solution,
+    analyze_transaction_failure, get_failure_statistics,
+};
+
 use serde::Deserialize;
 use std::sync::Mutex;
 use std::collections::HashMap;
@@ -2630,6 +2635,147 @@ pub async fn pnl_generate_demo(
     Json(serde_json::json!({
         "code": 200,
         "data": trades,
+        "msg": "success",
+        "success": true
+    }))
+}
+
+// =========================================
+// Transaction Failure Analyzer API
+// =========================================
+
+/// Input for transaction failure analysis
+#[derive(Debug, Deserialize)]
+pub struct TxFailureAnalysisInput {
+    pub tx_hash: String,
+    pub error_message: String,
+    pub gas_used: Option<u64>,
+    pub revert_data: Option<String>,
+}
+
+/// Analyze a transaction failure
+pub async fn analyze_tx_failure(
+    Json(input): Json<TxFailureAnalysisInput>,
+) -> Json<serde_json::Value> {
+    let result = analyze_transaction_failure(
+        &input.tx_hash,
+        &input.error_message,
+        input.gas_used,
+        input.revert_data,
+    );
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": result,
+        "msg": "success",
+        "success": true
+    }))
+}
+
+/// Input for batch failure analysis
+#[derive(Debug, Deserialize)]
+pub struct BatchFailureAnalysisInput {
+    pub transactions: Vec<TxFailureAnalysisInput>,
+}
+
+/// Analyze multiple transaction failures
+pub async fn analyze_batch_failures(
+    Json(input): Json<BatchFailureAnalysisInput>,
+) -> Json<serde_json::Value> {
+    let results: Vec<TransactionFailureAnalysis> = input.transactions
+        .iter()
+        .map(|tx| {
+            analyze_transaction_failure(
+                &tx.tx_hash,
+                &tx.error_message,
+                tx.gas_used,
+                tx.revert_data.clone(),
+            )
+        })
+        .collect();
+    
+    let stats = get_failure_statistics(&results);
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": {
+            "analyses": results,
+            "statistics": stats
+        },
+        "msg": "success",
+        "success": true
+    }))
+}
+
+/// Get common failure solutions
+pub async fn get_failure_solutions(
+    Json(failure_type): Json<String>,
+) -> Json<serde_json::Value> {
+    // Parse failure type and return predefined solutions
+    let solutions = match failure_type.as_str() {
+        "InsufficientFunds" => vec![
+            Solution {
+                title: "充值资金".to_string(),
+                description: "钱包余额不足，请充值足够的代币来支付交易费用和代币金额。".to_string(),
+                action_type: "adjust_amount".to_string(),
+                estimated_cost: None,
+            }
+        ],
+        "GasTooLow" => vec![
+            Solution {
+                title: "增加Gas费用".to_string(),
+                description: "将Gas价格设置为当前网络平均水平的1.2-1.5倍。".to_string(),
+                action_type: "adjust_gas".to_string(),
+                estimated_cost: Some("~$5-20".to_string()),
+            },
+            Solution {
+                title: "使用加速器".to_string(),
+                description: "使用交易加速器服务来优先处理您的交易。".to_string(),
+                action_type: "accelerate".to_string(),
+                estimated_cost: Some("~$10-50".to_string()),
+            }
+        ],
+        "NonceTooLow" => vec![
+            Solution {
+                title: "等待交易确认".to_string(),
+                description: "等待之前的交易被确认，然后重试。".to_string(),
+                action_type: "wait".to_string(),
+                estimated_cost: None,
+            },
+            Solution {
+                title: "取消低Nonce交易".to_string(),
+                description: "使用相同的Nonce发送0值交易来取消挂起的交易。".to_string(),
+                action_type: "cancel_nonce".to_string(),
+                estimated_cost: Some("~$5-15".to_string()),
+            }
+        ],
+        "SlippageExceeded" => vec![
+            Solution {
+                title: "增加滑点容差".to_string(),
+                description: "在交易设置中增加滑点容差（建议1-3%）。".to_string(),
+                action_type: "adjust_slippage".to_string(),
+                estimated_cost: None,
+            },
+            Solution {
+                title: "分批交易".to_string(),
+                description: "将大额交易拆分为多笔小交易。".to_string(),
+                action_type: "split_trade".to_string(),
+                estimated_cost: Some("额外Gas费用".to_string()),
+            }
+        ],
+        _ => vec![
+            Solution {
+                title: "联系支持团队".to_string(),
+                description: "此错误无法自动解决，请联系项目支持团队。".to_string(),
+                action_type: "contact_support".to_string(),
+                estimated_cost: None,
+            }
+        ]
+    };
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": solutions,
         "msg": "success",
         "success": true
     }))
