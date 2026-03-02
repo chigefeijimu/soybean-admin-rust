@@ -31,6 +31,7 @@ pub mod token_analytics;
 pub mod yield_optimizer;
 pub mod oracle_price;
 pub mod defi_analytics;
+pub mod pnl_tracker;
 
 pub use defi_analytics::{
     DefiProtocolStats, DefiCategoryStats, DefiMarketStats, ProtocolHistoryPoint,
@@ -45,6 +46,14 @@ pub use oracle_price::{
 // Re-export TokenAnalyticsService
 pub use token_analytics::TokenAnalyticsService;
 pub use yield_optimizer::{YieldOptimizerService, TYieldOptimizerService, YieldOpportunity, YieldPoolInfo, YieldProtocolInfo, PortfolioPosition, YieldOptimizationResult, OptimizeInput, calculate_compound_interest, calculate_apy_to_apr, calculate_apr_to_apy};
+
+pub use pnl_tracker::{
+    TokenTrade, Position, RealizedPnL, TokenPnL, PnLSummary, TradeInput,
+    PortfolioPerformance, TimeframeReturn, CostBasisInfo, CostBasisLot,
+    PnLTrackerService, PNL_TRACKER,
+    add_trade, get_wallet_pnl, get_portfolio_performance, get_cost_basis, export_trades_csv,
+    generate_demo_trades,
+};
 
 use async_trait::async_trait;
 use chrono::Local;

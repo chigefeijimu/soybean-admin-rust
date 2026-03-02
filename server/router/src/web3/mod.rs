@@ -3,7 +3,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, Web3OracleApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order, search_tokens, get_token_analytics, get_token_holders, get_token_transfers, get_price_history, get_analytics_summary, get_holder_distribution, get_token_security, get_top_yields, get_yield_protocols, analyze_yield_portfolio, get_yield_opportunities, compare_yield_tokens, compare_multiple};
+use server_api::web3::{Web3Api, Web3ContractApi, Web3TransactionApi, Web3MarketDataApi, Web3BridgeApi, Web3OracleApi, get_swap_tokens, get_swap_quote, get_swap_routes, build_swap_transaction, create_order, list_orders, get_order, cancel_order, update_order, search_tokens, get_token_analytics, get_token_holders, get_token_transfers, get_price_history, get_analytics_summary, get_holder_distribution, get_token_security, get_top_yields, get_yield_protocols, analyze_yield_portfolio, get_yield_opportunities, compare_yield_tokens, compare_multiple, pnl_add_trade, pnl_get_summary, pnl_get_performance, pnl_get_cost_basis, pnl_export_csv, pnl_generate_demo};
 use server_global::global::{add_route, RouteInfo};
 
 pub struct Web3Router;
@@ -482,5 +482,12 @@ impl Web3Router {
             .route("/oracle/multi", post(compare_multiple))
             .route("/oracle/status", get(Web3OracleApi::get_oracle_status))
             .route("/oracle/supported", get(Web3OracleApi::get_supported_tokens))
+            // P&L Tracker routes
+            .route("/pnl/trade", post(pnl_add_trade))
+            .route("/pnl/summary/{walletAddress}", get(pnl_get_summary))
+            .route("/pnl/performance/{walletAddress}/{period}", get(pnl_get_performance))
+            .route("/pnl/cost-basis/{walletAddress}/{tokenAddress}", get(pnl_get_cost_basis))
+            .route("/pnl/export/{walletAddress}", get(pnl_export_csv))
+            .route("/pnl/demo/{walletAddress}", get(pnl_generate_demo))
     }
 }

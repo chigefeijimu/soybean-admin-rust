@@ -2502,3 +2502,135 @@ pub async fn compare_multiple(
         })),
     }
 }
+
+// ============ P&L Tracker API ============
+
+use server_service::web3::{TradeInput, generate_demo_trades, add_trade, get_wallet_pnl, get_portfolio_performance, get_cost_basis, export_trades_csv};
+
+/// Add a new trade to track
+pub async fn pnl_add_trade(
+    Json(input): Json<TradeInput>,
+) -> Json<serde_json::Value> {
+    match add_trade(input).await {
+        Ok(trade) => Json(serde_json::json!({
+            "code": 200,
+            "data": trade,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        })),
+    }
+}
+
+/// Get P&L summary for a wallet
+pub async fn pnl_get_summary(
+    Path(wallet_address): Path<String>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> Json<serde_json::Value> {
+    let chain = params.get("chain").cloned();
+    
+    match get_wallet_pnl(&wallet_address, chain).await {
+        Ok(summary) => Json(serde_json::json!({
+            "code": 200,
+            "data": summary,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        })),
+    }
+}
+
+/// Get portfolio performance for a wallet
+pub async fn pnl_get_performance(
+    Path((wallet_address, period)): Path<(String, String)>,
+) -> Json<serde_json::Value> {
+    let valid_period = if ["daily", "weekly", "monthly", "yearly"].contains(&period.as_str()) {
+        period
+    } else {
+        "monthly".to_string()
+    };
+    
+    match get_portfolio_performance(&wallet_address, &valid_period).await {
+        Ok(performance) => Json(serde_json::json!({
+            "code": 200,
+            "data": performance,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        })),
+    }
+}
+
+/// Get cost basis information for a token
+pub async fn pnl_get_cost_basis(
+    Path((wallet_address, token_address)): Path<(String, String)>,
+) -> Json<serde_json::Value> {
+    match get_cost_basis(&wallet_address, &token_address).await {
+        Ok(info) => Json(serde_json::json!({
+            "code": 200,
+            "data": info,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        })),
+    }
+}
+
+/// Export trades as CSV
+pub async fn pnl_export_csv(
+    Path(wallet_address): Path<String>,
+) -> Json<serde_json::Value> {
+    match export_trades_csv(&wallet_address).await {
+        Ok(csv) => Json(serde_json::json!({
+            "code": 200,
+            "data": csv,
+            "msg": "success",
+            "success": true
+        })),
+        Err(e) => Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        })),
+    }
+}
+
+/// Generate demo trades for testing
+pub async fn pnl_generate_demo(
+    Path(wallet_address): Path<String>,
+) -> Json<serde_json::Value> {
+    let trades = generate_demo_trades(&wallet_address);
+    
+    // Add demo trades to tracker
+    for trade in &trades {
+        let _ = add_trade(trade.clone()).await;
+    }
+    
+    Json(serde_json::json!({
+        "code": 200,
+        "data": trades,
+        "msg": "success",
+        "success": true
+    }))
+}
