@@ -30,6 +30,12 @@ pub mod gas_analytics;
 pub mod token_analytics;
 pub mod yield_optimizer;
 pub mod oracle_price;
+pub mod defi_analytics;
+
+pub use defi_analytics::{
+    DefiProtocolStats, DefiCategoryStats, DefiMarketStats, ProtocolHistoryPoint,
+    get_defi_protocol_stats, get_defi_market_stats, get_protocol_tvl_history,
+};
 
 pub use oracle_price::{
     OraclePriceService, TOraclePriceService, OraclePrice, PriceComparison,
