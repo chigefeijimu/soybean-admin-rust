@@ -32,6 +32,7 @@ pub mod yield_optimizer;
 pub mod oracle_price;
 pub mod defi_analytics;
 pub mod pnl_tracker;
+pub mod transaction_failure_analyzer;
 
 pub use defi_analytics::{
     DefiProtocolStats, DefiCategoryStats, DefiMarketStats, ProtocolHistoryPoint,

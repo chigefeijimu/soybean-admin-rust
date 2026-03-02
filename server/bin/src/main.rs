@@ -1,9 +1,27 @@
 use std::net::SocketAddr;
+use std::panic;
 
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
+    // 设置全局 panic 处理器
+    panic::set_hook(Box::new(|panic_info| {
+        let msg = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Unknown panic".to_string()
+        };
+
+        let location = panic_info.location()
+            .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()))
+            .unwrap_or_else(|| "unknown location".to_string());
+
+        eprintln!("PANIC at {}: {}", location, msg);
+    }));
+
     let config_path = if cfg!(debug_assertions) {
         "server/resources/application-test.yaml"
     } else {

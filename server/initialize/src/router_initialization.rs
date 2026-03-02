@@ -333,6 +333,9 @@ pub async fn initialize_admin_router() -> Router {
         Arc::new(Web3Provider::new(ChainConfig::eth_mainnet())),
     ))));
 
+    // Global error handling - catch all unmatched routes and unhandled errors
+    app = app.layer(axum::middleware::from_fn(error_handler_layer));
+
     app = app.fallback(handler_404);
 
     process_collected_routes().await;
@@ -341,8 +344,18 @@ pub async fn initialize_admin_router() -> Router {
     app
 }
 
+// Global error handling middleware - catches any panics in request handling
+async fn error_handler_layer(
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    next.run(req).await
+}
+
 async fn handler_404() -> impl IntoResponse {
-    (StatusCode::NOT_FOUND, "nothing to see here")
+    use server_core::web::res::Res;
+    let response = Res::<()>::new_error(404, "Resource not found");
+    (StatusCode::NOT_FOUND, axum::Json(response))
 }
 
 async fn process_collected_routes() {
