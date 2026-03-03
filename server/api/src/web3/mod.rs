@@ -63,6 +63,13 @@ pub use server_service::web3::transaction_failure_analyzer::{
     analyze_transaction_failure, get_failure_statistics,
 };
 
+pub use server_service::web3::token_vesting::{
+    TokenVestingInfo, VestingSchedule, ReleaseEvent, VestingSummary,
+    VestingTimeline, TimelineEvent, PopularVestingToken, VestingComparison,
+    GetVestingInput, SearchVestingTokensInput, GetVestingTimelineInput, CompareVestingInput,
+    TokenVestingService,
+};
+
 use serde::Deserialize;
 use std::sync::Mutex;
 use std::collections::HashMap;
@@ -2779,4 +2786,86 @@ pub async fn get_failure_solutions(
         "msg": "success",
         "success": true
     }))
+}
+
+// ============ Token Vesting API ============
+
+/// Get vesting information for a token
+pub async fn get_token_vesting(
+    Json(input): Json<GetVestingInput>,
+) -> Result<Json<serde_json::Value>, axum::response::Response> {
+    match TokenVestingService::get_vesting_info(&input) {
+        Ok(result) => Ok(Json(serde_json::json!({
+            "code": 200,
+            "data": result,
+            "msg": "success",
+            "success": true
+        }))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        }))),
+    }
+}
+
+/// Get popular vesting tokens
+pub async fn get_popular_vesting_tokens(
+    Query(params): Query<SearchVestingTokensInput>,
+) -> Result<Json<serde_json::Value>, axum::response::Response> {
+    match TokenVestingService::get_popular_vesting_tokens(&params) {
+        Ok(result) => Ok(Json(serde_json::json!({
+            "code": 200,
+            "data": result,
+            "msg": "success",
+            "success": true
+        }))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        }))),
+    }
+}
+
+/// Get vesting timeline
+pub async fn get_vesting_timeline(
+    Json(input): Json<GetVestingTimelineInput>,
+) -> Result<Json<serde_json::Value>, axum::response::Response> {
+    match TokenVestingService::get_vesting_timeline(&input) {
+        Ok(result) => Ok(Json(serde_json::json!({
+            "code": 200,
+            "data": result,
+            "msg": "success",
+            "success": true
+        }))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        }))),
+    }
+}
+
+/// Compare two vesting schedules
+pub async fn compare_vesting_schedules(
+    Json(input): Json<CompareVestingInput>,
+) -> Result<Json<serde_json::Value>, axum::response::Response> {
+    match TokenVestingService::compare_vesting(&input) {
+        Ok(result) => Ok(Json(serde_json::json!({
+            "code": 200,
+            "data": result,
+            "msg": "success",
+            "success": true
+        }))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "code": 500,
+            "data": null,
+            "msg": e,
+            "success": false
+        }))),
+    }
 }

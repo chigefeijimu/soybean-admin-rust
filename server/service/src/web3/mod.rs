@@ -33,6 +33,7 @@ pub mod oracle_price;
 pub mod defi_analytics;
 pub mod pnl_tracker;
 pub mod transaction_failure_analyzer;
+pub mod token_vesting;
 
 pub use defi_analytics::{
     DefiProtocolStats, DefiCategoryStats, DefiMarketStats, ProtocolHistoryPoint,
